@@ -111,6 +111,46 @@ export function createServer() {
     });
   });
 
+  app.delete('/api/accounts/:email', async (req, res) => {
+    try {
+      const result = await accountManager.revokeAccount(req.params.email);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/accounts/revoke', async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error: 'Email is required' });
+      const result = await accountManager.revokeAccount(email);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/accounts/:email/test', async (req, res) => {
+    try {
+      const model = req.body?.model || 'gemini-3.8-flash-high';
+      const result = await accountManager.testAccount(req.params.email, model);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/accounts/test-matrix', async (req, res) => {
+    try {
+      const models = req.body?.models || null;
+      const result = await accountManager.testAccountMatrix(models);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Google OAuth Login
   app.get('/oauth/login', (req, res) => {
     const authUrl = accountManager.getAuthorizationUrl();

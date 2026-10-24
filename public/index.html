@@ -327,12 +327,27 @@
 
       <!-- Recent Requests History -->
       <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-bold text-sm text-white flex items-center gap-2">
-            <span>📜 Lịch Sử Request Gần Nhất (Live Logs)</span>
-          </h3>
-          <span class="text-[11px] text-slate-500" id="m-recent-count">Hiển thị 0 lượt gọi</span>
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div class="flex items-center gap-2">
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <span>📜 Lịch Sử Request Gần Nhất (Live Logs)</span>
+            </h3>
+            <span class="text-[11px] text-slate-500" id="m-recent-count">0 lượt gọi</span>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <div class="flex items-center gap-1.5">
+              <label class="text-slate-400 text-[11px]">Hiển thị:</label>
+              <select id="log-page-size" onchange="changeLogPageSize(this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-emerald-500">
+                <option value="10" selected>10 lượt / trang</option>
+                <option value="50">50 lượt / trang</option>
+                <option value="100">100 lượt / trang</option>
+              </select>
+            </div>
+            <span class="text-slate-600">|</span>
+            <span class="text-slate-300 font-mono text-xs" id="log-page-indicator">Trang 1 / 1</span>
+          </div>
         </div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs font-mono">
             <thead class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
@@ -355,15 +370,26 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination Controls -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mt-3 pt-3 border-t border-slate-800/80 text-xs">
+          <div class="text-slate-500 text-[11px] flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Nhấp vào bất kỳ dòng nào để xem chi tiết đầy đủ thông số & Token</span>
+          </div>
+          <div class="flex items-center space-x-1" id="log-pagination-controls">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- TAB 3: ACCOUNTS MANAGEMENT -->
-    <section id="tab-accounts" class="flex-1 hidden overflow-y-auto p-8 max-w-5xl mx-auto w-full">
+    <section id="tab-accounts" class="flex-1 hidden overflow-y-auto p-8 max-w-6xl mx-auto w-full">
       <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
         <div>
           <h2 class="text-xl font-bold text-white tracking-tight">Tài Khoản Google Antigravity</h2>
-          <p class="text-xs text-slate-400 mt-1">Hệ thống tự động xoay vòng (round-robin) và tự động refresh token trước khi hết hạn.</p>
+          <p class="text-xs text-slate-400 mt-1">Hệ thống tự động xoay vòng (round-robin), làm mát khi dính 429 và tự động refresh token.</p>
         </div>
         <a href="/oauth/login" target="_blank" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition shadow-lg shadow-emerald-500/20">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -371,8 +397,44 @@
         </a>
       </div>
 
-      <div id="accounts-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div id="accounts-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Account Diagnostics & Model Test Matrix -->
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
+          <div>
+            <h3 class="font-bold text-base text-white tracking-tight flex items-center gap-2">
+              <span>🩺 Ma Trận Chẩn Đoán & Kiểm Thử Tài Khoản x Model</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Kiểm tra khả năng phản hồi và đo độ trễ thực tế của từng tài khoản Google với từng model cụ thể.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-run-matrix" onclick="runFullMatrixTest()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition shadow-sm shadow-emerald-500/20">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Kiểm Tra Toàn Bộ Ma Trận</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+              <tr id="matrix-thead-tr">
+                <th class="py-2.5 px-3">Tài Khoản</th>
+                <th class="py-2.5 px-3 text-center">Gemini 4 Argon</th>
+                <th class="py-2.5 px-3 text-center">Gemini 3.8 Flash</th>
+                <th class="py-2.5 px-3 text-center">Claude Opus 5.5</th>
+                <th class="py-2.5 px-3 text-center">Claude Sonnet 5.5</th>
+                <th class="py-2.5 px-3 text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="matrix-tbody" class="divide-y divide-slate-800/60 text-[11px]">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -597,6 +659,17 @@
     let cachedSkills = [];
     let activeSkillId = null;
 
+    let logPageSize = 10;
+    let logCurrentPage = 1;
+    let logRecentCache = [];
+    let currentAccounts = [];
+    const MATRIX_MODELS = [
+      { id: 'gemini-4-argon', name: 'Gemini 4 Argon' },
+      { id: 'gemini-3.8-flash-high', name: 'Gemini 3.8 Flash' },
+      { id: 'claude-opus-5-5-high', name: 'Claude Opus 5.5' },
+      { id: 'claude-sonnet-5-5-high', name: 'Claude Sonnet 5.5' }
+    ];
+
     // Tab Switching
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => {
@@ -700,45 +773,137 @@
           `).join('');
         }
 
-        // Recent requests log
-        const recentTbody = document.getElementById('metrics-recent-tbody');
-        document.getElementById('m-recent-count').innerText = `Hiển thị ${data.recentRequests.length} lượt gọi gần nhất`;
-        if (data.recentRequests && data.recentRequests.length > 0) {
-          recentTbody.innerHTML = data.recentRequests.map(r => {
-            const timeStr = new Date(r.time).toLocaleTimeString();
-            const isOk = r.status === 'success';
-            return `
-              <tr class="hover:bg-slate-800/40 transition">
-                <td class="py-2 px-3 text-slate-400">${timeStr}</td>
-                <td class="py-2 px-3 text-white font-medium">${r.model}</td>
-                <td class="py-2 px-3 text-slate-400 truncate max-w-[150px]" title="${r.account}">${r.account.split('@')[0]}</td>
-                <td class="py-2 px-3 text-center">
-                  <span class="text-[9px] px-1.5 py-0.5 rounded ${r.stream ? 'bg-sky-500/10 text-sky-400' : 'bg-slate-800 text-slate-400'}">
-                    ${r.stream ? 'STREAM' : 'SYNC'}
-                  </span>
-                </td>
-                <td class="py-2 px-3 text-right">
-                  <span class="text-sky-400">${r.promptTokens}</span> /
-                  <span class="text-emerald-400">${r.completionTokens}</span> /
-                  <span class="text-purple-400">${r.cachedTokens}</span>
-                </td>
-                <td class="py-2 px-3 text-right text-slate-300">${r.ttftMs}ms</td>
-                <td class="py-2 px-3 text-right text-slate-300">${(r.durationMs / 1000).toFixed(2)}s</td>
-                <td class="py-2 px-3 text-right text-amber-400 font-bold">${r.tps > 0 ? r.tps : '-'}</td>
-                <td class="py-2 px-3 text-center">
-                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${isOk ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}" title="${r.error || 'OK'}">
-                    ${isOk ? '200 OK' : 'ERROR'}
-                  </span>
-                </td>
-              </tr>
-            `;
-          }).join('');
-        } else {
-          recentTbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-500 text-xs">Chưa có lịch sử request.</td></tr>`;
-        }
+        // Recent requests log cache & pagination
+        logRecentCache = data.recentRequests || [];
+        renderLogPage();
 
       } catch (e) {
         console.error('Failed to load metrics:', e);
+      }
+    }
+
+    function changeLogPageSize(size) {
+      logPageSize = parseInt(size, 10) || 10;
+      logCurrentPage = 1;
+      renderLogPage();
+    }
+
+    function goToLogPage(p) {
+      const totalPages = Math.max(1, Math.ceil(logRecentCache.length / logPageSize));
+      if (p < 1) p = 1;
+      if (p > totalPages) p = totalPages;
+      logCurrentPage = p;
+      renderLogPage();
+    }
+
+    function renderLogPage() {
+      const totalItems = logRecentCache.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / logPageSize));
+      if (logCurrentPage > totalPages) logCurrentPage = totalPages;
+
+      document.getElementById('m-recent-count').innerText = `${totalItems} lượt gọi được lưu`;
+      document.getElementById('log-page-indicator').innerText = `Trang ${logCurrentPage} / ${totalPages} (Tổng ${totalItems})`;
+
+      const tbody = document.getElementById('metrics-recent-tbody');
+      if (totalItems === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-500 text-xs">Chưa có lịch sử request.</td></tr>`;
+        document.getElementById('log-pagination-controls').innerHTML = '';
+        return;
+      }
+
+      const startIdx = (logCurrentPage - 1) * logPageSize;
+      const endIdx = Math.min(startIdx + logPageSize, totalItems);
+      const pageItems = logRecentCache.slice(startIdx, endIdx);
+
+      tbody.innerHTML = pageItems.map(r => {
+        const timeStr = new Date(r.time).toLocaleTimeString();
+        const isOk = r.status === 'success';
+        return `
+          <tr onclick="openRequestDetailModal('${r.id}')" class="hover:bg-slate-800/60 cursor-pointer transition select-none">
+            <td class="py-2 px-3 text-slate-400">${timeStr}</td>
+            <td class="py-2 px-3 text-white font-medium flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full ${isOk ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
+              ${r.model}
+            </td>
+            <td class="py-2 px-3 text-slate-400 truncate max-w-[150px]" title="${r.account}">${r.account ? r.account.split('@')[0] : 'unknown'}</td>
+            <td class="py-2 px-3 text-center">
+              <span class="text-[9px] px-1.5 py-0.5 rounded ${r.stream ? 'bg-sky-500/10 text-sky-400' : 'bg-slate-800 text-slate-400'}">
+                ${r.stream ? 'STREAM' : 'SYNC'}
+              </span>
+            </td>
+            <td class="py-2 px-3 text-right">
+              <span class="text-sky-400">${r.promptTokens}</span> /
+              <span class="text-emerald-400">${r.completionTokens}</span> /
+              <span class="text-purple-400">${r.cachedTokens}</span>
+            </td>
+            <td class="py-2 px-3 text-right text-slate-300">${r.ttftMs}ms</td>
+            <td class="py-2 px-3 text-right text-slate-300">${(r.durationMs / 1000).toFixed(2)}s</td>
+            <td class="py-2 px-3 text-right text-amber-400 font-bold">${r.tps > 0 ? r.tps : '-'}</td>
+            <td class="py-2 px-3 text-center">
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${isOk ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}" title="${r.error || 'OK'}">
+                ${isOk ? '200 OK' : 'ERROR'}
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Render pagination buttons
+      const controls = document.getElementById('log-pagination-controls');
+      let btnsHtml = `
+        <button onclick="goToLogPage(1)" ${logCurrentPage === 1 ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-slate-800"'} px-2 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300 text-xs">⏮️</button>
+        <button onclick="goToLogPage(${logCurrentPage - 1})" ${logCurrentPage === 1 ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-slate-800"'} px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300 text-xs">◀️</button>
+      `;
+
+      const startPage = Math.max(1, logCurrentPage - 2);
+      const endPage = Math.min(totalPages, logCurrentPage + 2);
+      for (let p = startPage; p <= endPage; p++) {
+        btnsHtml += `
+          <button onclick="goToLogPage(${p})" class="px-2.5 py-1 rounded text-xs ${p === logCurrentPage ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800'}">
+            ${p}
+          </button>
+        `;
+      }
+
+      btnsHtml += `
+        <button onclick="goToLogPage(${logCurrentPage + 1})" ${logCurrentPage === totalPages ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-slate-800"'} px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300 text-xs">▶️</button>
+        <button onclick="goToLogPage(${totalPages})" ${logCurrentPage === totalPages ? 'disabled class="opacity-30 cursor-not-allowed"' : 'class="hover:bg-slate-800"'} px-2 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300 text-xs">⏭️</button>
+      `;
+      controls.innerHTML = btnsHtml;
+    }
+
+    function openRequestDetailModal(reqId) {
+      const req = logRecentCache.find(r => r.id === reqId);
+      if (!req) return;
+
+      document.getElementById('modal-req-id').innerText = req.id;
+      document.getElementById('modal-model').innerText = req.model;
+      document.getElementById('modal-account').innerText = req.account;
+      document.getElementById('modal-time').innerText = new Date(req.time).toLocaleString();
+      document.getElementById('modal-stream').innerText = req.stream ? 'SSE Streaming' : 'Non-Streaming (Sync)';
+
+      document.getElementById('modal-prompt-tokens').innerText = (req.promptTokens || 0).toLocaleString();
+      document.getElementById('modal-comp-tokens').innerText = (req.completionTokens || 0).toLocaleString();
+      document.getElementById('modal-cached-tokens').innerText = (req.cachedTokens || 0).toLocaleString();
+
+      document.getElementById('modal-ttft').innerText = (req.ttftMs || 0) + ' ms';
+      document.getElementById('modal-duration').innerText = (req.durationMs || 0) + ' ms';
+      document.getElementById('modal-tps').innerText = req.tps > 0 ? req.tps.toFixed(1) : '-';
+
+      const errBox = document.getElementById('modal-error-box');
+      if (req.status !== 'success' && req.error) {
+        errBox.classList.remove('hidden');
+        document.getElementById('modal-error-text').innerText = req.error;
+      } else {
+        errBox.classList.add('hidden');
+      }
+
+      document.getElementById('request-detail-modal').classList.remove('hidden');
+    }
+
+    function closeRequestDetailModal() {
+      document.getElementById('request-detail-modal').classList.add('hidden');
+    }
       }
     }
 
@@ -975,15 +1140,17 @@ description: ${descVal}
       try {
         const res = await fetch('/api/accounts');
         const data = await res.json();
+        currentAccounts = data.accounts || [];
         const list = document.getElementById('accounts-list');
-        document.getElementById('acc-count-badge').innerText = data.accounts.length;
+        document.getElementById('acc-count-badge').innerText = currentAccounts.length;
 
-        if (data.accounts.length === 0) {
+        if (currentAccounts.length === 0) {
           list.innerHTML = `<div class="col-span-2 text-center py-12 text-slate-500 text-sm">Chưa có tài khoản nào. Bấm 'Liên Kết Thêm Tài Khoản' ở trên.</div>`;
+          renderMatrixTable([]);
           return;
         }
 
-        list.innerHTML = data.accounts.map(a => `
+        list.innerHTML = currentAccounts.map(a => `
           <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
             <div class="flex items-start justify-between">
               <div>
@@ -995,13 +1162,161 @@ description: ${descVal}
                 ${a.isCooldown ? `Cooldown (${a.cooldownSeconds}s)` : 'Ready'}
               </span>
             </div>
-            <div class="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
-              <span>Token: <span class="text-emerald-400">Tự động refresh</span></span>
-              <span class="text-slate-500">OAuth Antigravity</span>
+            <div class="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+              <div class="flex items-center gap-1.5">
+                <button onclick="testSingleAccount('${a.email}', 'gemini-3.8-flash-high')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+                  ⚡ Test ping
+                </button>
+              </div>
+              <button onclick="revokeAccountPrompt('${a.email}')" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+                🚫 Thu hồi / Xóa
+              </button>
             </div>
           </div>
         `).join('');
+
+        renderMatrixTable(currentAccounts);
       } catch (e) {
+        console.error('Failed to load accounts:', e);
+      }
+    }
+
+    function renderMatrixTable(accounts) {
+      const tbody = document.getElementById('matrix-tbody');
+      if (!tbody) return;
+      if (!accounts || accounts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500 text-xs">Chưa có tài khoản nào để chẩn đoán.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = accounts.map(a => {
+        const safeEmailId = a.email.replace(/[^a-zA-Z0-9]/g, '_');
+        return `
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="py-2.5 px-3">
+              <div class="font-medium text-white">${a.email}</div>
+              <div class="text-[10px] text-slate-500 font-mono">${a.projectId || 'aicode-consumers'}</div>
+            </td>
+            ${MATRIX_MODELS.map(m => `
+              <td class="py-2.5 px-3 text-center" id="cell-${safeEmailId}-${m.id}">
+                <button onclick="testSingleCell('${a.email}', '${m.id}')" class="text-[10px] px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition" title="Nhấp để kiểm tra model này">
+                  ⚪ Test
+                </button>
+              </td>
+            `).join('')}
+            <td class="py-2.5 px-3 text-center">
+              <button onclick="testAllModelsForAccount('${a.email}')" class="text-[10px] bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-400 text-slate-300 border border-slate-700 px-2.5 py-1 rounded transition">
+                ⚡ Test cả 4
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function revokeAccountPrompt(email) {
+      if (!confirm(`Bạn có chắc chắn muốn thu hồi quyền và xóa tài khoản Google: ${email}?\nThao tác này sẽ hủy OAuth token và xóa khỏi proxy.`)) {
+        return;
+      }
+      try {
+        const res = await fetch('/api/accounts/' + encodeURIComponent(email), { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        alert(`Đã thu hồi và xóa tài khoản ${email} thành công!`);
+        await loadAccounts();
+        if (typeof loadMetrics === 'function') loadMetrics();
+      } catch (err) {
+        alert('Lỗi thu hồi tài khoản: ' + err.message);
+      }
+    }
+
+    async function testSingleCell(email, modelId) {
+      const safeEmailId = email.replace(/[^a-zA-Z0-9]/g, '_');
+      const cell = document.getElementById(`cell-${safeEmailId}-${modelId}`);
+      if (cell) {
+        cell.innerHTML = `<span class="text-[10px] text-amber-400 animate-pulse font-mono">⏳ Testing...</span>`;
+      }
+
+      try {
+        const res = await fetch(`/api/accounts/${encodeURIComponent(email)}/test`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: modelId })
+        });
+        const data = await res.json();
+        updateMatrixCell(email, modelId, data);
+      } catch (err) {
+        updateMatrixCell(email, modelId, { success: false, status: 500, error: err.message, latencyMs: 0 });
+      }
+    }
+
+    function updateMatrixCell(email, modelId, result) {
+      const safeEmailId = email.replace(/[^a-zA-Z0-9]/g, '_');
+      const cell = document.getElementById(`cell-${safeEmailId}-${modelId}`);
+      if (!cell) return;
+
+      if (result.success) {
+        cell.innerHTML = `
+          <button onclick="testSingleCell('${email}', '${modelId}')" class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold hover:bg-emerald-500/20 transition" title="200 OK (${result.latencyMs}ms). Bấm để test lại">
+            🟢 ${result.latencyMs}ms
+          </button>
+        `;
+      } else if (result.status === 429) {
+        cell.innerHTML = `
+          <button onclick="testSingleCell('${email}', '${modelId}')" class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold hover:bg-amber-500/20 transition" title="429 Quota Exceeded. Bấm để test lại">
+            🟡 429 Quota
+          </button>
+        `;
+      } else {
+        const cleanErr = (result.error || '').replace(/"/g, '&quot;');
+        cell.innerHTML = `
+          <button onclick="alert('Chi tiết lỗi:\\n' + decodeURIComponent('${encodeURIComponent(result.error || 'HTTP ' + result.status)}'))" class="text-[10px] px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold hover:bg-rose-500/20 transition" title="Bấm để xem chi tiết lỗi">
+            🔴 Lỗi ${result.status}
+          </button>
+        `;
+      }
+    }
+
+    async function testSingleAccount(email, model = 'gemini-3.8-flash-high') {
+      await testSingleCell(email, model);
+    }
+
+    async function testAllModelsForAccount(email) {
+      for (const m of MATRIX_MODELS) {
+        await testSingleCell(email, m.id);
+      }
+    }
+
+    async function runFullMatrixTest() {
+      const btn = document.getElementById('btn-run-matrix');
+      if (!btn) return;
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+      const oldHtml = btn.innerHTML;
+      btn.innerHTML = `<span>⏳ Đang kiểm tra...</span>`;
+
+      try {
+        const res = await fetch('/api/accounts/test-matrix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ models: MATRIX_MODELS.map(m => m.id) })
+        });
+        const data = await res.json();
+        if (data.matrix) {
+          for (const accResult of data.matrix) {
+            for (const item of accResult.results) {
+              updateMatrixCell(accResult.email, item.model, item);
+            }
+          }
+        }
+      } catch (err) {
+        alert('Lỗi chạy ma trận test: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+        btn.innerHTML = oldHtml;
+      }
+    }
         console.error('Failed to load accounts:', e);
       }
     }
@@ -1192,5 +1507,70 @@ description: ${descVal}
       document.getElementById('skills-count-badge').innerText = d.skills?.length || 0;
     }).catch(() => {});
   </script>
+
+  <!-- Request Detail Modal -->
+  <div id="request-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>🔍 Chi Tiết Request</span>
+          <span id="modal-req-id" class="font-mono text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20"></span>
+        </h3>
+        <button onclick="closeRequestDetailModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto py-4 space-y-4 text-xs font-mono">
+        <div class="grid grid-cols-2 gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+          <div><span class="text-slate-500">Model:</span> <span id="modal-model" class="text-white font-bold"></span></div>
+          <div><span class="text-slate-500">Tài khoản:</span> <span id="modal-account" class="text-slate-300"></span></div>
+          <div><span class="text-slate-500">Thời gian:</span> <span id="modal-time" class="text-slate-300"></span></div>
+          <div><span class="text-slate-500">Chế độ:</span> <span id="modal-stream" class="text-slate-300"></span></div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+            <div class="text-[10px] text-slate-500 uppercase">Input Tokens</div>
+            <div id="modal-prompt-tokens" class="text-base font-bold text-sky-400">0</div>
+          </div>
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+            <div class="text-[10px] text-slate-500 uppercase">Output Tokens</div>
+            <div id="modal-comp-tokens" class="text-base font-bold text-emerald-400">0</div>
+          </div>
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+            <div class="text-[10px] text-slate-500 uppercase">Cached Tokens</div>
+            <div id="modal-cached-tokens" class="text-base font-bold text-purple-400">0</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+            <div class="text-[10px] text-slate-500 uppercase">TTFT (First Token)</div>
+            <div id="modal-ttft" class="text-base font-bold text-amber-400">0 ms</div>
+          </div>
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+            <div class="text-[10px] text-slate-500 uppercase">Tổng Thời Lượng</div>
+            <div id="modal-duration" class="text-base font-bold text-slate-200">0 ms</div>
+          </div>
+          <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+            <div class="text-[10px] text-slate-500 uppercase">Tốc Độ (TPS)</div>
+            <div id="modal-tps" class="text-base font-bold text-teal-400">0.0</div>
+          </div>
+        </div>
+
+        <div id="modal-error-box" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
+          <div class="font-bold mb-1">Lỗi / Error:</div>
+          <div id="modal-error-text" class="whitespace-pre-wrap break-all text-[11px]"></div>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 flex justify-end">
+        <button onclick="closeRequestDetailModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-1.5 rounded-lg text-xs font-semibold transition">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

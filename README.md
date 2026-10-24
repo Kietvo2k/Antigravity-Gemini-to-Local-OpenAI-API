@@ -13,11 +13,15 @@ Local Proxy Server hiệu năng cao chuyển đổi Google Antigravity CloudCode
     - Đếm chi tiết token: **Input Tokens (Prompt)**, **Output Tokens (Completion)**, **Cached Tokens (Prompt Cache)**, tỉ lệ hit cache.
     - Đo độ trễ: **TTFT (Time To First Token)** và tổng thời gian phản hồi (Latency).
     - Thống kê chi tiết theo từng Model và từng tài khoản Google Antigravity.
-    - Live Request Log: Ghi nhận lịch sử 100 lượt gọi gần nhất với đầy đủ thông số hiệu năng.
+    - **Live Request Logs Phân Trang:** Hỗ trợ hiển thị 10 / 50 / 100 lượt gọi trên mỗi trang, điều hướng linh hoạt và bộ nhớ đệm mở rộng 500 requests gần nhất.
+    - **Request Detail Modal:** Nhấp vào bất kỳ dòng log nào để mở popup xem chi tiết toàn bộ thông số, thời lượng, token in/out/cache và lỗi gốc.
+  - 👥 **Quản Lý & Chẩn Đoán Tài Khoản Nâng Cao (Accounts & Test Matrix):**
+    - **Thu hồi (Revoke) & Xóa tài khoản:** Nút 1-click gửi lệnh thu hồi token lên Google OAuth server và dọn dẹp tài khoản an toàn.
+    - **Kiểm tra sức khỏe từng tài khoản:** Nút Test ping kiểm tra khả năng refresh token và gọi CloudCode.
+    - **🩺 Ma Trận Chẩn Đoán Account x Model:** Bảng ma trận trực quan kiểm tra chéo từng tài khoản với từng model (`Gemini 4 Argon`, `Gemini 3.8 Flash`, `Claude Opus 5.5`, `Claude Sonnet 5.5`), đo độ trễ thực tế (ms) và phát hiện tài khoản bị 429 quota.
   - 🧩 **Skills Customizer (Quản lý & Tùy chỉnh Skills):**
     - Trực tiếp duyệt, xem, chỉnh sửa và tạo mới các file kỹ năng `SKILL.md` (đồng bộ với `~/.agents/skills`).
     - Hỗ trợ Markdown Editor + Live Preview, kèm mẫu template chuẩn cho Agentic Skills.
-  - 👥 **Quản lý tài khoản (Accounts):** Theo dõi trạng thái các tài khoản Google đã liên kết, bộ đếm cooldown, token refresh tự động.
   - 🔗 **Liên kết tài khoản 1-Click (`/oauth/login`):** Mở trình duyệt đăng nhập tài khoản Google Antigravity mới mà không cần copy paste token thủ công.
   - 🛠️ **Config Generator:** Nút 1-click copy cấu hình sẵn cho Kilo Code, Claude Code, cURL.
 - **Danh mục Model tập trung (Đã tối ưu):**

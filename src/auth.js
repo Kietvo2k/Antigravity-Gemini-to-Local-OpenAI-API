@@ -1,4 +1,5 @@
 import fs from 'fs';
+import crypto from 'crypto';
 import { CONFIG } from './config.js';
 
 class AccountManager {
@@ -214,6 +215,159 @@ class AccountManager {
     this.saveAccounts();
     console.log(`[Auth] Account ${email} successfully saved.`);
     return accountObj;
+  }
+
+  async revokeAccount(email) {
+    const acc = this.accounts.find(a => a.email === email);
+    if (!acc) {
+      throw new Error(`Account ${email} not found.`);
+    }
+
+    // Try Google OAuth token revocation
+    const tokenToRevoke = acc.refreshToken || acc.accessToken;
+    if (tokenToRevoke) {
+      try {
+        await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tokenToRevoke)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        console.log(`[Auth] Revoked OAuth token on Google server for ${email}`);
+      } catch (err) {
+        console.warn(`[Auth] Google OAuth revoke warning for ${email}:`, err.message);
+      }
+    }
+
+    this.accounts = this.accounts.filter(a => a.email !== email);
+    this.cooldowns.delete(email);
+    this.saveAccounts();
+    console.log(`[Auth] Account ${email} deleted from accounts list.`);
+    return { success: true, email };
+  }
+
+  async testAccount(email, modelId = 'gemini-3.8-flash-high') {
+    const acc = this.accounts.find(a => a.email === email);
+    if (!acc) {
+      return {
+        email,
+        model: modelId,
+        success: false,
+        status: 404,
+        error: `Account ${email} not found.`,
+        latencyMs: 0
+      };
+    }
+
+    const now = Date.now();
+    const expiresMs = acc.expiresAt ? new Date(acc.expiresAt).getTime() : 0;
+    try {
+      if (!acc.accessToken || expiresMs - now < 5 * 60 * 1000) {
+        await this.refreshToken(acc);
+      }
+    } catch (err) {
+      return {
+        email,
+        model: modelId,
+        success: false,
+        status: 401,
+        error: `Token refresh failed: ${err.message}`,
+        latencyMs: 0
+      };
+    }
+
+    const modelDef = CONFIG.MODELS.find(m => m.id === modelId);
+    const upstreamCandidates = Array.isArray(modelDef?.upstream)
+      ? modelDef.upstream
+      : [modelDef?.upstream || modelId];
+
+    const startTime = Date.now();
+    let lastError = null;
+    let lastStatus = 500;
+
+    for (const candidateModel of upstreamCandidates) {
+      for (const baseUrl of [CONFIG.API.BASE_URL, CONFIG.API.FALLBACK_BASE_URL]) {
+        try {
+          const cloudReq = {
+            project: acc.projectId || CONFIG.API.DEFAULT_PROJECT,
+            model: candidateModel,
+            userAgent: 'antigravity',
+            requestId: `test-${crypto.randomUUID()}`,
+            request: {
+              contents: [{ role: 'user', parts: [{ text: 'say ok' }] }],
+              generationConfig: { maxOutputTokens: 5 }
+            }
+          };
+
+          const res = await fetch(`${baseUrl}/v1internal:streamGenerateContent?alt=sse`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${acc.accessToken}`,
+              'Content-Type': 'application/json',
+              'User-Agent': CONFIG.API.USER_AGENT
+            },
+            body: JSON.stringify(cloudReq)
+          });
+
+          lastStatus = res.status;
+          if (res.ok) {
+            const latencyMs = Date.now() - startTime;
+            return {
+              email,
+              model: modelId,
+              candidateModel,
+              success: true,
+              status: 200,
+              latencyMs
+            };
+          }
+
+          const errText = await res.text();
+          lastError = errText;
+          if (res.status === 404) {
+            continue; // try next candidate/baseUrl
+          }
+          break; // other error, break out of baseUrl loop
+        } catch (e) {
+          lastError = e.message;
+        }
+      }
+    }
+
+    const latencyMs = Date.now() - startTime;
+    return {
+      email,
+      model: modelId,
+      success: false,
+      status: lastStatus,
+      error: lastError ? lastError.substring(0, 300) : 'Unknown error',
+      latencyMs
+    };
+  }
+
+  async testAccountMatrix(models = null) {
+    const targetModels = models && Array.isArray(models) && models.length > 0
+      ? models
+      : ['gemini-4-argon', 'gemini-3.8-flash-high', 'claude-opus-5-5-high', 'claude-sonnet-5-5-high'];
+
+    const matrixResults = [];
+    for (const acc of this.accounts) {
+      const accResults = [];
+      for (const modelId of targetModels) {
+        const res = await this.testAccount(acc.email, modelId);
+        accResults.push(res);
+      }
+      matrixResults.push({
+        email: acc.email,
+        name: acc.name,
+        projectId: acc.projectId,
+        results: accResults
+      });
+    }
+
+    return {
+      timestamp: new Date().toISOString(),
+      models: targetModels,
+      matrix: matrixResults
+    };
   }
 }
 

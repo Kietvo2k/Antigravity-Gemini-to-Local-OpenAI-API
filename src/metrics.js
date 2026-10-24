@@ -174,7 +174,7 @@ export class MetricsTracker {
       error
     });
 
-    if (this.recentRequests.length > 100) {
+    if (this.recentRequests.length > 500) {
       this.recentRequests.pop();
     }
 
