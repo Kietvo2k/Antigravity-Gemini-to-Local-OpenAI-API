@@ -30,14 +30,28 @@ export const CONFIG = {
 
   // Google CloudCode Endpoints
   API: {
-    USER_AGENT: 'antigravity/hub/2.24.0 windows/amd64',
+    USER_AGENT: 'antigravity/cli/1.4.0 windows/amd64',
     BASE_URL: 'https://daily-cloudcode-pa.googleapis.com',
     FALLBACK_BASE_URL: 'https://cloudcode-pa.googleapis.com',
     DEFAULT_PROJECT: 'aicode-consumers'
   },
 
-  // Supported Model Catalog: Only Gemini 3.8 Flash High, Claude Opus 5.5 High, Claude Sonnet 5.5 High
+  // Supported Model Catalog: Gemini 4 Argon, 3.8 Flash, Claude 5.5 & 4.6
   MODELS: [
+    {
+      id: 'gemini-4-argon',
+      name: 'Gemini 4 Argon (Reasoning)',
+      upstream: ['gemini-4-argon-high', 'gemini-4-argon-medium', 'gemini-4-argon-low', 'gemini-4-argon'],
+      contextWindow: 1048576,
+      supportsThinking: true
+    },
+    {
+      id: 'gemini-4-argon-high',
+      name: 'Gemini 4 Argon High (Reasoning)',
+      upstream: ['gemini-4-argon-high', 'gemini-4-argon-medium', 'gemini-4-argon'],
+      contextWindow: 1048576,
+      supportsThinking: true
+    },
     {
       id: 'gemini-3.8-flash-high',
       name: 'Gemini 3.8 Flash High (Reasoning)',
@@ -55,6 +69,34 @@ export const CONFIG = {
     {
       id: 'claude-sonnet-5-5-high',
       name: 'Claude Sonnet 5.5 High (Antigravity)',
+      upstream: ['claude-sonnet-5-5-high', 'claude-sonnet-4-6'],
+      contextWindow: 200000,
+      supportsThinking: true
+    },
+    {
+      id: 'claude-opus-4-6-thinking',
+      name: 'Claude Opus 4.6 Thinking (Antigravity)',
+      upstream: ['claude-opus-5-5-high', 'claude-opus-4-6-thinking'],
+      contextWindow: 200000,
+      supportsThinking: true
+    },
+    {
+      id: 'claude-opus-4-6',
+      name: 'Claude Opus 4.6 (Antigravity)',
+      upstream: ['claude-opus-5-5-high', 'claude-opus-4-6-thinking'],
+      contextWindow: 200000,
+      supportsThinking: true
+    },
+    {
+      id: 'claude-sonnet-4-6',
+      name: 'Claude Sonnet 4.6 (Antigravity)',
+      upstream: ['claude-sonnet-5-5-high', 'claude-sonnet-4-6'],
+      contextWindow: 200000,
+      supportsThinking: true
+    },
+    {
+      id: 'claude-sonnet-4-6-thinking',
+      name: 'Claude Sonnet 4.6 Thinking (Antigravity)',
       upstream: ['claude-sonnet-5-5-high', 'claude-sonnet-4-6'],
       contextWindow: 200000,
       supportsThinking: true

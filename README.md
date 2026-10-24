@@ -12,13 +12,17 @@ Local Proxy Server hiệu năng cao chuyển đổi Google Antigravity CloudCode
   - 🔗 **Liên kết tài khoản 1-Click (`/oauth/login`):** Mở trình duyệt đăng nhập tài khoản Google Antigravity mới mà không cần copy paste token thủ công.
   - 🛠️ **Config Generator:** Nút 1-click copy cấu hình sẵn cho Kilo Code, Claude Code, cURL.
 - **Danh mục Model tập trung (Đã tối ưu):**
-  - `gemini-3.8-flash-high`: Model Gemini thông minh nhất với khả năng suy luận chuyên sâu (Reasoning / Thinking).
+  - `gemini-4-argon` / `gemini-4-argon-high`: Flagship reasoning model thế hệ mới nhất của Google (Argon, 1M context, giải toán/code/agent sâu).
+  - `gemini-3.8-flash-high`: Model Gemini thông minh và cân bằng với khả năng suy luận chuyên sâu (Reasoning / Thinking).
   - `claude-opus-5-5-high`: Claude Opus 5.5 High qua hạ tầng Google CloudCode.
   - `claude-sonnet-5-5-high`: Claude Sonnet 5.5 High siêu tốc và chuẩn xác.
+  - `claude-opus-4-6-thinking`: Tương thích ngược phiên bản Claude Opus 4.6 (tự động điều phối upstream thông minh).
+  - `claude-sonnet-4-6`: Tương thích ngược phiên bản Claude Sonnet 4.6.
 - **Hỗ trợ chuẩn OpenAI API v1:**
   - Hỗ trợ đầy đủ endpoint `GET /v1/models` và `POST /v1/chat/completions`.
   - Hỗ trợ cả **Streaming (SSE)** và **Non-Streaming**.
   - **Tự động lọc & chuẩn hóa Function Calling / Tool Schema:** Tương thích hoàn toàn với Kilo Code, MCP tools, Cursor, v.v. Tự động chuyển đổi các trường JSON Schema không được Google Protobuf hỗ trợ (`$schema`, `exclusiveMinimum`, `propertyNames`, `readOnly`, `writeOnly`, `$id`, `$defs`, v.v.) thành định dạng hợp lệ cho Gemini Schema.
+  - **Xử lý Thought Signatures (Gemini 3 & 4):** Tự động bảo toàn và inject `thoughtSignature` / `skip_thought_signature_validator` trong các cuộc gọi tool đa lượt (multi-turn), loại bỏ triệt để lỗi thiếu signature của Gemini API.
 - **Cơ chế Failover & Load Balancing:**
   - Tự động xoay vòng nhiều tài khoản Google (Round-robin).
   - Tự động làm mát và chuyển tài khoản khác khi gặp giới hạn tốc độ (429 Rate Limit).
@@ -65,6 +69,18 @@ Mở file cấu hình Kilo Code (`~/.config/kilo/kilo.jsonc` hoặc `./kilo.json
         "apiKey": "sk-local-antigravity"
       },
       "models": {
+        "gemini-4-argon": {
+          "name": "Gemini 4 Argon (AYGFree)",
+          "reasoning": true,
+          "attachment": true,
+          "modalities": { "input": ["text", "image", "pdf"] }
+        },
+        "gemini-4-argon-high": {
+          "name": "Gemini 4 Argon High (AYGFree)",
+          "reasoning": true,
+          "attachment": true,
+          "modalities": { "input": ["text", "image", "pdf"] }
+        },
         "gemini-3.8-flash-high": {
           "name": "Gemini 3.8 Flash High (AYGFree)",
           "reasoning": true,
@@ -82,6 +98,18 @@ Mở file cấu hình Kilo Code (`~/.config/kilo/kilo.jsonc` hoặc `./kilo.json
           "reasoning": true,
           "attachment": true,
           "modalities": { "input": ["text", "image", "pdf"] }
+        },
+        "claude-opus-4-6-thinking": {
+          "name": "Claude Opus 4.6 Thinking (AYGFree)",
+          "reasoning": true,
+          "attachment": true,
+          "modalities": { "input": ["text", "image", "pdf"] }
+        },
+        "claude-sonnet-4-6": {
+          "name": "Claude Sonnet 4.6 (AYGFree)",
+          "reasoning": true,
+          "attachment": true,
+          "modalities": { "input": ["text", "image", "pdf"] }
         }
       }
     }
@@ -90,8 +118,13 @@ Mở file cấu hình Kilo Code (`~/.config/kilo/kilo.jsonc` hoặc `./kilo.json
 ```
 
 Sau đó trong Kilo Code, chọn model:
+- `aygfree/gemini-4-argon`
+- `aygfree/gemini-4-argon-high`
 - `aygfree/gemini-3.8-flash-high`
 - `aygfree/claude-opus-5-5-high`
+- `aygfree/claude-sonnet-5-5-high`
+- `aygfree/claude-opus-4-6-thinking`
+- `aygfree/claude-sonnet-4-6`
 - `aygfree/claude-sonnet-5-5-high`
 
 ---

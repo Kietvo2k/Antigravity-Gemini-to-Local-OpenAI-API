@@ -89,21 +89,29 @@ class AccountManager {
     const available = this.accounts.filter(a => (this.cooldowns.get(a.email) || 0) <= now);
     const pool = available.length > 0 ? available : this.accounts;
 
-    // Round-robin selection
-    this.currentIndex = (this.currentIndex + 1) % pool.length;
-    const acc = pool[this.currentIndex];
+    let lastError = null;
+    for (let i = 0; i < pool.length; i++) {
+      this.currentIndex = (this.currentIndex + 1) % pool.length;
+      const acc = pool[this.currentIndex];
 
-    // Check expiration (refresh if expires within 5 minutes)
-    const expiresMs = acc.expiresAt ? new Date(acc.expiresAt).getTime() : 0;
-    if (!acc.accessToken || expiresMs - now < 5 * 60 * 1000) {
-      await this.refreshToken(acc);
+      try {
+        const expiresMs = acc.expiresAt ? new Date(acc.expiresAt).getTime() : 0;
+        if (!acc.accessToken || expiresMs - now < 5 * 60 * 1000) {
+          await this.refreshToken(acc);
+        }
+        return {
+          accessToken: acc.accessToken,
+          projectId: acc.projectId || CONFIG.API.DEFAULT_PROJECT,
+          email: acc.email
+        };
+      } catch (err) {
+        lastError = err;
+        console.warn(`[Auth] Account ${acc.email} token error: ${err.message}. Trying next account...`);
+        this.markCooldown(acc.email, 3600000); // 1 hour cooldown for invalid account
+      }
     }
 
-    return {
-      accessToken: acc.accessToken,
-      projectId: acc.projectId || CONFIG.API.DEFAULT_PROJECT,
-      email: acc.email
-    };
+    throw lastError || new Error('No valid tokens available across accounts');
   }
 
   getAuthorizationUrl() {

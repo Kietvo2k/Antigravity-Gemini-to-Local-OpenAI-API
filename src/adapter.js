@@ -41,7 +41,8 @@ export class Adapter {
           parts.push({ text: msg.content });
         }
         if (msg.tool_calls && Array.isArray(msg.tool_calls)) {
-          for (const tc of msg.tool_calls) {
+          for (let i = 0; i < msg.tool_calls.length; i++) {
+            const tc = msg.tool_calls[i];
             let argsObj = {};
             try {
               argsObj = typeof tc.function.arguments === 'string' 
@@ -50,11 +51,13 @@ export class Adapter {
             } catch (e) {
               argsObj = { raw: tc.function.arguments };
             }
+            const signature = tc.thought_signature || tc.thoughtSignature || msg.thought_signature || msg.thoughtSignature || 'skip_thought_signature_validator';
             parts.push({
               functionCall: {
                 name: tc.function.name,
                 args: argsObj
-              }
+              },
+              thoughtSignature: signature
             });
           }
         }
