@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import { CONFIG } from './config.js';
 import { accountManager } from './auth.js';
 import { Adapter } from './adapter.js';
+import { metricsTracker } from './metrics.js';
+import { skillManager } from './skills.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,11 +30,78 @@ export function createServer() {
         models: '/v1/models',
         chatCompletions: '/v1/chat/completions',
         accounts: '/api/accounts',
-        addAccount: '/oauth/login'
+        addAccount: '/oauth/login',
+        metrics: '/api/metrics',
+        skills: '/api/skills'
       },
       accountsCount: accountManager.getAccounts().length,
+      skillsCount: skillManager.listSkills().length,
+      metrics: metricsTracker.getSummary(accountManager).overview,
       models: CONFIG.MODELS.map(m => m.id)
     });
+  });
+
+  // Metrics & Quota Tracker API
+  app.get('/api/metrics', (req, res) => {
+    res.json(metricsTracker.getSummary(accountManager));
+  });
+
+  app.post('/api/metrics/reset', (req, res) => {
+    metricsTracker.reset();
+    res.json({ success: true, message: 'Metrics reset successfully' });
+  });
+
+  // Skills Management API
+  app.get('/api/skills', (req, res) => {
+    try {
+      res.json({
+        skillsDir: skillManager.skillsDir,
+        skills: skillManager.listSkills()
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/skills/:id', (req, res) => {
+    try {
+      const skill = skillManager.getSkill(req.params.id);
+      res.json({ skill });
+    } catch (err) {
+      res.status(404).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/skills', (req, res) => {
+    try {
+      const { id, name, description, content } = req.body;
+      if (!name && !id) {
+        return res.status(400).json({ error: 'Skill name or id is required' });
+      }
+      const skill = skillManager.saveSkill(id || name, { name, description, content: content || '' });
+      res.json({ success: true, skill });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.put('/api/skills/:id', (req, res) => {
+    try {
+      const { name, description, content } = req.body;
+      const skill = skillManager.saveSkill(req.params.id, { name, description, content: content || '' });
+      res.json({ success: true, skill });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/skills/:id', (req, res) => {
+    try {
+      const result = skillManager.deleteSkill(req.params.id);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
   });
 
   // Account Management API
@@ -111,6 +180,12 @@ export function createServer() {
     const cleanModel = rawModel.startsWith('ag/') ? rawModel.slice(3) : rawModel;
     const isStream = req.body.stream !== false;
 
+    metricsTracker.recordStart(completionId, {
+      model: rawModel,
+      account: 'pending',
+      stream: isStream
+    });
+
     const modelDef = CONFIG.MODELS.find(m => m.id === cleanModel);
     const upstreamCandidates = Array.isArray(modelDef?.upstream)
       ? modelDef.upstream
@@ -123,6 +198,8 @@ export function createServer() {
     while (retries >= 0 && !success) {
       try {
         const { accessToken, projectId, email } = await accountManager.getValidToken();
+        const activeEntry = metricsTracker.activeMap.get(completionId);
+        if (activeEntry) activeEntry.account = email;
 
         for (const candidateModel of upstreamCandidates) {
           for (const baseUrl of [CONFIG.API.BASE_URL, CONFIG.API.FALLBACK_BASE_URL]) {
@@ -167,6 +244,11 @@ export function createServer() {
             continue;
           }
 
+          metricsTracker.recordComplete(completionId, {
+            status: 'error',
+            error: `HTTP ${cloudRes?.status}: ${errText.substring(0, 150)}`
+          });
+
           return res.status(cloudRes?.status || 500).json({
             error: {
               message: `Upstream CloudCode error: ${errText}`,
@@ -186,6 +268,7 @@ export function createServer() {
           const reader = cloudRes.body.getReader();
           const decoder = new TextDecoder();
           let lineBuffer = '';
+          let lastUsage = null;
 
           try {
             while (true) {
@@ -203,8 +286,12 @@ export function createServer() {
                   if (jsonStr && jsonStr !== '[DONE]') {
                     try {
                       const parsed = JSON.parse(jsonStr);
+                      if (parsed.response?.usageMetadata) {
+                        lastUsage = parsed.response.usageMetadata;
+                      }
                       const openaiChunk = Adapter.cloudCodeChunkToOpenAI(parsed, rawModel, completionId);
                       if (openaiChunk) {
+                        metricsTracker.recordFirstToken(completionId);
                         res.write(`data: ${JSON.stringify(openaiChunk)}\n\n`);
                       }
                     } catch (e) {
@@ -215,10 +302,37 @@ export function createServer() {
               }
             }
 
+            if (lastUsage) {
+              const usageChunk = {
+                id: completionId,
+                object: 'chat.completion.chunk',
+                created: Math.floor(Date.now() / 1000),
+                model: rawModel,
+                choices: [],
+                usage: {
+                  prompt_tokens: lastUsage.promptTokenCount || 0,
+                  completion_tokens: lastUsage.candidatesTokenCount || 0,
+                  total_tokens: lastUsage.totalTokenCount || 0,
+                  prompt_tokens_details: {
+                    cached_tokens: lastUsage.cachedContentTokenCount || 0
+                  }
+                }
+              };
+              res.write(`data: ${JSON.stringify(usageChunk)}\n\n`);
+            }
+
             res.write('data: [DONE]\n\n');
             res.end();
+            metricsTracker.recordComplete(completionId, {
+              usage: lastUsage,
+              status: 'success'
+            });
           } catch (streamErr) {
             console.error('[API] Stream error:', streamErr.message);
+            metricsTracker.recordComplete(completionId, {
+              status: 'error',
+              error: streamErr.message
+            });
             res.end();
           }
         } else {
@@ -249,12 +363,20 @@ export function createServer() {
 
           const responseObj = Adapter.cloudCodeToOpenAIResponse(chunks, rawModel, completionId);
           res.json(responseObj);
+          metricsTracker.recordComplete(completionId, {
+            usage: responseObj.usage,
+            status: 'success'
+          });
         }
 
       } catch (err) {
         console.error('[API] Request failed:', err.message);
         retries--;
         if (retries < 0) {
+          metricsTracker.recordComplete(completionId, {
+            status: 'error',
+            error: err.message
+          });
           return res.status(500).json({
             error: {
               message: err.message,

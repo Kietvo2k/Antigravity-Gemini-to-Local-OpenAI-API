@@ -8,6 +8,15 @@ Local Proxy Server hiệu năng cao chuyển đổi Google Antigravity CloudCode
 
 - **Giao diện Web UI Dashboard trực quan (`http://127.0.0.1:8045/`):**
   - 💬 **Chat Playground:** Trò chuyện trực tiếp với model, streaming token mượt mà, render Markdown và cú pháp code, khối hiển thị suy luận (Reasoning / Thinking) có thể đóng/mở.
+  - 📊 **Quota & Token Metrics Tracker:**
+    - Đo tốc độ sinh token thời gian thực: **TPS** (Tokens/s), Peak TPS, Average TPS.
+    - Đếm chi tiết token: **Input Tokens (Prompt)**, **Output Tokens (Completion)**, **Cached Tokens (Prompt Cache)**, tỉ lệ hit cache.
+    - Đo độ trễ: **TTFT (Time To First Token)** và tổng thời gian phản hồi (Latency).
+    - Thống kê chi tiết theo từng Model và từng tài khoản Google Antigravity.
+    - Live Request Log: Ghi nhận lịch sử 100 lượt gọi gần nhất với đầy đủ thông số hiệu năng.
+  - 🧩 **Skills Customizer (Quản lý & Tùy chỉnh Skills):**
+    - Trực tiếp duyệt, xem, chỉnh sửa và tạo mới các file kỹ năng `SKILL.md` (đồng bộ với `~/.agents/skills`).
+    - Hỗ trợ Markdown Editor + Live Preview, kèm mẫu template chuẩn cho Agentic Skills.
   - 👥 **Quản lý tài khoản (Accounts):** Theo dõi trạng thái các tài khoản Google đã liên kết, bộ đếm cooldown, token refresh tự động.
   - 🔗 **Liên kết tài khoản 1-Click (`/oauth/login`):** Mở trình duyệt đăng nhập tài khoản Google Antigravity mới mà không cần copy paste token thủ công.
   - 🛠️ **Config Generator:** Nút 1-click copy cấu hình sẵn cho Kilo Code, Claude Code, cURL.

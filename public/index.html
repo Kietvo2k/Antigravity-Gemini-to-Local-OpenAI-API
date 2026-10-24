@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Antigravity Local OpenAI API Dashboard</title>
+  <title>Antigravity Local OpenAI API Dashboard & Quota Tracker</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -32,12 +32,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    pre, code, .font-mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    pre, code, .font-mono { font-family: 'JetBrains Mono', monospace; }
     .prose pre {
       background: #0f172a;
       border: 1px solid #1e293b;
@@ -46,31 +42,13 @@
       margin: 8px 0;
       position: relative;
     }
-    .prose code {
-      color: #38bdf8;
-      font-size: 0.9em;
-    }
-    .prose p {
-      margin-bottom: 0.75rem;
-    }
-    .prose p:last-child {
-      margin-bottom: 0;
-    }
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
-    }
+    .prose code { color: #38bdf8; font-size: 0.9em; }
+    .prose p { margin-bottom: 0.75rem; }
+    .prose p:last-child { margin-bottom: 0; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
@@ -94,14 +72,20 @@
 
     <!-- Navigation Tabs -->
     <nav class="flex items-center bg-slate-900 border border-slate-800 p-1 rounded-xl space-x-1">
-      <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn px-4 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 text-slate-950 shadow-sm transition">
+      <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 text-slate-950 shadow-sm transition">
         💬 Chat Playground
       </button>
-      <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="tab-btn px-4 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+      <button onclick="switchTab('metrics')" id="tab-btn-metrics" class="tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+        📊 Quota & Metrics
+      </button>
+      <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
         👥 Accounts (<span id="acc-count-badge">0</span>)
       </button>
-      <button onclick="switchTab('config')" id="tab-btn-config" class="tab-btn px-4 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
-        🛠️ Kilo / Client Config
+      <button onclick="switchTab('skills')" id="tab-btn-skills" class="tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+        🧩 Skills (<span id="skills-count-badge">0</span>)
+      </button>
+      <button onclick="switchTab('config')" id="tab-btn-config" class="tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+        🛠️ Client Config
       </button>
     </nav>
 
@@ -160,17 +144,17 @@
           </div>
           <h3 class="text-base font-bold text-white mb-1">Local Antigravity Playground</h3>
           <p class="text-xs text-slate-400 mb-4 max-w-md mx-auto">
-            Giao diện kiểm thử trực tiếp các model Gemini 3.8 Flash High và Claude 5.5 High từ tài khoản Google của bạn với chuẩn OpenAI Streaming API.
+            Giao diện kiểm thử trực tiếp các model Gemini 4 Argon, Gemini 3.8 Flash và Claude 5.5 High qua hạ tầng Google Antigravity.
           </p>
           <div class="flex flex-wrap justify-center gap-2">
-            <button onclick="quickPrompt('Viết một bài thơ 4 câu về lập trình viên')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700/80 transition">
-              📝 Viết bài thơ 4 câu
-            </button>
-            <button onclick="quickPrompt('Giải bài toán: Có 12 quả táo, chia cho 3 người sao cho mỗi người ít nhất 2 quả. Có bao nhiêu cách?')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700/80 transition">
-              🧠 Bài toán tổ hợp
-            </button>
-            <button onclick="quickPrompt('Tạo một hàm TypeScript debounce tối ưu bộ nhớ và gõ type an toàn')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700/80 transition">
+            <button onclick="quickPrompt('Viết một hàm TypeScript tính Fibonacci tối ưu với memoization')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700/80 transition">
               ⚡ Code TypeScript
+            </button>
+            <button onclick="quickPrompt('Giải thích nguyên lý của Thought Signatures trong Gemini 4 và Gemini 3')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700/80 transition">
+              🧠 Thought Signatures
+            </button>
+            <button onclick="quickPrompt('So sánh hiệu năng giữa Gemini 4 Argon và Gemini 3.8 Flash High')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700/80 transition">
+              🚀 Gemini 4 Argon
             </button>
           </div>
         </div>
@@ -198,7 +182,183 @@
       </div>
     </section>
 
-    <!-- TAB 2: ACCOUNTS MANAGEMENT -->
+    <!-- TAB 2: QUOTA & METRICS TRACKER -->
+    <section id="tab-metrics" class="flex-1 hidden overflow-y-auto p-8 max-w-6xl mx-auto w-full">
+      <!-- Section Header -->
+      <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+        <div>
+          <h2 class="text-xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            📊 Quota & Token Metrics Tracker
+            <span id="live-indicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">
+            Theo dõi thời gian thực Input / Output Tokens, Prompt Cache, TPS (Tokens/s) và hạn ngạch tài khoản.
+          </p>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer select-none bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
+            <input type="checkbox" id="metrics-auto-refresh" checked onchange="toggleMetricsAutoRefresh()" class="rounded border-slate-700 text-emerald-500 focus:ring-0 bg-slate-800">
+            <span>Tự động cập nhật (2s)</span>
+          </label>
+          <button onclick="loadMetrics()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg transition">
+            🔄 Làm mới
+          </button>
+          <button onclick="resetMetrics()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1.5 rounded-lg transition">
+            🗑️ Reset số liệu
+          </button>
+        </div>
+      </div>
+
+      <!-- Stat Cards Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 mb-8">
+        <!-- TPS Card -->
+        <div class="bg-gradient-to-br from-amber-500/10 to-slate-900 border border-amber-500/20 rounded-2xl p-4">
+          <div class="text-[11px] font-semibold text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            ⚡ Tốc độ (TPS)
+          </div>
+          <div class="text-2xl font-bold text-white font-mono" id="m-tps-current">0.0</div>
+          <div class="text-[10px] text-slate-400 mt-1 flex items-center justify-between">
+            <span>Peak: <b id="m-tps-peak" class="text-slate-300 font-mono">0.0</b></span>
+            <span>Avg: <b id="m-tps-avg" class="text-slate-300 font-mono">0.0</b></span>
+          </div>
+        </div>
+
+        <!-- In Tokens Card -->
+        <div class="bg-gradient-to-br from-sky-500/10 to-slate-900 border border-sky-500/20 rounded-2xl p-4">
+          <div class="text-[11px] font-semibold text-sky-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            📥 Input Tokens
+          </div>
+          <div class="text-2xl font-bold text-white font-mono" id="m-tokens-prompt">0</div>
+          <div class="text-[10px] text-slate-400 mt-1">Prompt gửi lên model</div>
+        </div>
+
+        <!-- Out Tokens Card -->
+        <div class="bg-gradient-to-br from-emerald-500/10 to-slate-900 border border-emerald-500/20 rounded-2xl p-4">
+          <div class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            📤 Output Tokens
+          </div>
+          <div class="text-2xl font-bold text-white font-mono" id="m-tokens-completion">0</div>
+          <div class="text-[10px] text-slate-400 mt-1">Tokens model đã sinh</div>
+        </div>
+
+        <!-- Cached Tokens Card -->
+        <div class="bg-gradient-to-br from-purple-500/10 to-slate-900 border border-purple-500/20 rounded-2xl p-4">
+          <div class="text-[11px] font-semibold text-purple-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            💾 Cached Tokens
+          </div>
+          <div class="text-2xl font-bold text-white font-mono" id="m-tokens-cached">0</div>
+          <div class="text-[10px] text-slate-400 mt-1">Hit rate: <b id="m-cache-ratio" class="text-purple-300 font-mono">0%</b></div>
+        </div>
+
+        <!-- Latency Card -->
+        <div class="bg-gradient-to-br from-rose-500/10 to-slate-900 border border-rose-500/20 rounded-2xl p-4">
+          <div class="text-[11px] font-semibold text-rose-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            ⏱️ Độ trễ (Avg)
+          </div>
+          <div class="text-2xl font-bold text-white font-mono" id="m-latency-duration">0 ms</div>
+          <div class="text-[10px] text-slate-400 mt-1">TTFT: <b id="m-latency-ttft" class="text-slate-300 font-mono">0 ms</b></div>
+        </div>
+
+        <!-- Total Requests Card -->
+        <div class="bg-gradient-to-br from-teal-500/10 to-slate-900 border border-teal-500/20 rounded-2xl p-4">
+          <div class="text-[11px] font-semibold text-teal-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            🔄 Tổng Requests
+          </div>
+          <div class="text-2xl font-bold text-white font-mono" id="m-requests-total">0</div>
+          <div class="text-[10px] text-slate-400 mt-1">
+            <span class="text-emerald-400 font-mono" id="m-requests-success">0</span> OK /
+            <span class="text-rose-400 font-mono" id="m-requests-failed">0</span> Err
+          </div>
+        </div>
+      </div>
+
+      <!-- Models Breakdown Table -->
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 mb-8">
+        <h3 class="font-bold text-sm text-white mb-3 flex items-center gap-2">
+          <span>🎯 Thống Kê Theo Model</span>
+          <span class="text-[10px] text-slate-400 font-normal">Token & Tốc độ sinh của từng Model</span>
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+              <tr>
+                <th class="py-2.5 px-3">Model</th>
+                <th class="py-2.5 px-3 text-right">Requests</th>
+                <th class="py-2.5 px-3 text-right">Input Tokens</th>
+                <th class="py-2.5 px-3 text-right">Output Tokens</th>
+                <th class="py-2.5 px-3 text-right">Cached</th>
+                <th class="py-2.5 px-3 text-right">Tổng Tokens</th>
+                <th class="py-2.5 px-3 text-right">Avg TPS</th>
+                <th class="py-2.5 px-3 text-right">Độ trễ</th>
+              </tr>
+            </thead>
+            <tbody id="metrics-models-tbody" class="divide-y divide-slate-800/60 font-mono">
+              <tr>
+                <td colspan="8" class="text-center py-6 text-slate-500 text-xs">Chưa có request nào được thực hiện.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Accounts Quota & Cooldown Status -->
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 mb-8">
+        <h3 class="font-bold text-sm text-white mb-3 flex items-center gap-2">
+          <span>👥 Quota & Trạng Thái Cooldown Tài Khoản</span>
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+              <tr>
+                <th class="py-2.5 px-3">Tài Khoản</th>
+                <th class="py-2.5 px-3">Project ID</th>
+                <th class="py-2.5 px-3">Trạng Thái</th>
+                <th class="py-2.5 px-3 text-right">Requests</th>
+                <th class="py-2.5 px-3 text-right">Tokens Đã Dùng</th>
+                <th class="py-2.5 px-3 text-right">Cooldown Còn Lại</th>
+              </tr>
+            </thead>
+            <tbody id="metrics-accounts-tbody" class="divide-y divide-slate-800/60">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Requests History -->
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm text-white flex items-center gap-2">
+            <span>📜 Lịch Sử Request Gần Nhất (Live Logs)</span>
+          </h3>
+          <span class="text-[11px] text-slate-500" id="m-recent-count">Hiển thị 0 lượt gọi</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+              <tr>
+                <th class="py-2 px-3">Thời gian</th>
+                <th class="py-2 px-3">Model</th>
+                <th class="py-2 px-3">Tài khoản</th>
+                <th class="py-2 px-3 text-center">Stream</th>
+                <th class="py-2 px-3 text-right">In / Out / Cache</th>
+                <th class="py-2 px-3 text-right">TTFT</th>
+                <th class="py-2 px-3 text-right">Thời lượng</th>
+                <th class="py-2 px-3 text-right">TPS</th>
+                <th class="py-2 px-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="metrics-recent-tbody" class="divide-y divide-slate-800/60 text-[11px]">
+              <tr>
+                <td colspan="9" class="text-center py-6 text-slate-500 text-xs">Chưa có lịch sử request.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ACCOUNTS MANAGEMENT -->
     <section id="tab-accounts" class="flex-1 hidden overflow-y-auto p-8 max-w-5xl mx-auto w-full">
       <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
         <div>
@@ -216,7 +376,124 @@
       </div>
     </section>
 
-    <!-- TAB 3: CONFIGURATION GUIDE -->
+    <!-- TAB 4: SKILLS CUSTOMIZER -->
+    <section id="tab-skills" class="flex-1 hidden flex flex-col h-[calc(100vh-65px)] overflow-hidden">
+      <!-- Skills Top Header -->
+      <div class="px-6 py-3 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between shrink-0">
+        <div>
+          <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+            🧩 Quản Lý & Tùy Chỉnh Skills
+            <span id="skills-dir-path" class="text-[11px] font-mono text-slate-500 font-normal truncate max-w-md"></span>
+          </h2>
+          <p class="text-xs text-slate-400">Xem, chỉnh sửa hoặc tạo mới các file kỹ năng `SKILL.md` (tương thích Kilo Code, Claude Code & Codex).</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="newSkillForm()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+            Tạo Skill Mới
+          </button>
+        </div>
+      </div>
+
+      <!-- Skills Split Workspace -->
+      <div class="flex-1 flex overflow-hidden">
+        <!-- Left: Skills List -->
+        <div class="w-80 border-r border-slate-800 bg-slate-900/30 flex flex-col shrink-0">
+          <div class="p-3 border-b border-slate-800">
+            <div class="relative">
+              <input
+                type="text"
+                id="skill-search"
+                placeholder="Tìm kiếm skill..."
+                oninput="filterSkills()"
+                class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none"
+              >
+              <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+          </div>
+          <div id="skills-list-container" class="flex-1 overflow-y-auto divide-y divide-slate-800/60">
+            <!-- Dynamic skills list -->
+          </div>
+        </div>
+
+        <!-- Right: Skill Editor -->
+        <div class="flex-1 flex flex-col bg-slate-950 overflow-hidden">
+          <!-- Editor Toolbar -->
+          <div class="px-6 py-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between shrink-0">
+            <div class="flex-1 grid grid-cols-2 gap-3 mr-4">
+              <div>
+                <label class="text-[10px] text-slate-400 font-semibold uppercase block mb-1">Mã định danh (ID / Folder):</label>
+                <input
+                  type="text"
+                  id="skill-edit-id"
+                  placeholder="e.g. my-custom-skill"
+                  class="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none"
+                >
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 font-semibold uppercase block mb-1">Tên hiển thị:</label>
+                <input
+                  type="text"
+                  id="skill-edit-name"
+                  placeholder="e.g. My Custom Skill"
+                  class="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                >
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-4">
+              <button onclick="insertSkillTemplate()" class="text-xs text-slate-400 hover:text-slate-200 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg transition">
+                📄 Mẫu Template
+              </button>
+              <button onclick="saveCurrentSkill()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
+                💾 Lưu Skill
+              </button>
+              <button id="skill-delete-btn" onclick="deleteCurrentSkill()" class="hidden bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1.5 rounded-lg text-xs transition">
+                🗑️ Xóa
+              </button>
+            </div>
+          </div>
+
+          <!-- Description row -->
+          <div class="px-6 py-2 border-b border-slate-800/80 bg-slate-900/30 shrink-0">
+            <label class="text-[10px] text-slate-400 font-semibold uppercase block mb-1">Mô tả ngắn (Description - AI đọc để kích hoạt tự động):</label>
+            <input
+              type="text"
+              id="skill-edit-desc"
+              placeholder="Mô tả khi nào agent nên tự động gọi skill này..."
+              class="w-full bg-slate-900/80 border border-slate-800 focus:border-emerald-500 rounded-lg px-3 py-1 text-xs text-slate-200 focus:outline-none"
+            >
+          </div>
+
+          <!-- Editor Body Tabs -->
+          <div class="px-6 py-1.5 border-b border-slate-800/60 bg-slate-900/20 flex items-center justify-between text-xs shrink-0">
+            <div class="flex items-center space-x-2">
+              <button onclick="toggleSkillEditorTab('code')" id="skill-tab-code-btn" class="px-3 py-1 font-semibold text-emerald-400 border-b-2 border-emerald-400 transition">
+                Markdown / SKILL.md
+              </button>
+              <button onclick="toggleSkillEditorTab('preview')" id="skill-tab-preview-btn" class="px-3 py-1 font-semibold text-slate-400 hover:text-white transition">
+                Xem Trước (Preview)
+              </button>
+            </div>
+            <span id="skill-edit-meta" class="text-[11px] font-mono text-slate-500"></span>
+          </div>
+
+          <!-- Code Textarea -->
+          <div class="flex-1 flex overflow-hidden relative">
+            <textarea
+              id="skill-edit-content"
+              placeholder="Nhập nội dung SKILL.md tại đây..."
+              class="w-full h-full bg-slate-950 p-6 text-xs text-slate-100 font-mono leading-relaxed resize-none focus:outline-none overflow-y-auto"
+              spellcheck="false"
+            ></textarea>
+            <!-- Rendered Preview -->
+            <div id="skill-edit-preview" class="hidden w-full h-full bg-slate-950 p-6 overflow-y-auto prose dark:prose-invert max-w-none text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: CONFIGURATION GUIDE -->
     <section id="tab-config" class="flex-1 hidden overflow-y-auto p-8 max-w-4xl mx-auto w-full">
       <div class="mb-6 pb-4 border-b border-slate-800">
         <h2 class="text-xl font-bold text-white tracking-tight">Hướng Dẫn Cấu Hình Client</h2>
@@ -303,7 +580,7 @@
         <pre><code id="curl-config" class="language-bash">curl http://127.0.0.1:8045/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gemini-3.8-flash-high",
+    "model": "gemini-4-argon",
     "stream": true,
     "messages": [{"role": "user", "content": "Xin chào!"}]
   }'</code></pre>
@@ -316,6 +593,9 @@
   <script>
     let chatHistory = [];
     let isGenerating = false;
+    let metricsTimer = null;
+    let cachedSkills = [];
+    let activeSkillId = null;
 
     // Tab Switching
     function switchTab(tabId) {
@@ -323,17 +603,374 @@
         b.classList.remove('bg-emerald-500', 'text-slate-950');
         b.classList.add('text-slate-400');
       });
-      document.getElementById('tab-btn-' + tabId).classList.add('bg-emerald-500', 'text-slate-950');
-      document.getElementById('tab-btn-' + tabId).classList.remove('text-slate-400');
+      const activeBtn = document.getElementById('tab-btn-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-emerald-500', 'text-slate-950');
+        activeBtn.classList.remove('text-slate-400');
+      }
 
-      document.getElementById('tab-chat').classList.toggle('hidden', tabId !== 'chat');
-      document.getElementById('tab-accounts').classList.toggle('hidden', tabId !== 'accounts');
-      document.getElementById('tab-config').classList.toggle('hidden', tabId !== 'config');
+      ['chat', 'metrics', 'accounts', 'skills', 'config'].forEach(t => {
+        const el = document.getElementById('tab-' + t);
+        if (el) el.classList.toggle('hidden', t !== tabId);
+      });
+
+      if (tabId === 'metrics') {
+        loadMetrics();
+        startMetricsAutoRefresh();
+      } else {
+        stopMetricsAutoRefresh();
+      }
 
       if (tabId === 'accounts') loadAccounts();
+      if (tabId === 'skills') loadSkills();
     }
 
-    // Load Accounts
+    // ==================== METRICS & QUOTA TRACKER ====================
+    async function loadMetrics() {
+      try {
+        const res = await fetch('/api/metrics');
+        if (!res.ok) return;
+        const data = await res.json();
+        const o = data.overview;
+
+        // Top cards
+        document.getElementById('m-tps-current').innerText = (o.tps.current || 0).toFixed(1);
+        document.getElementById('m-tps-peak').innerText = (o.tps.peak || 0).toFixed(1);
+        document.getElementById('m-tps-avg').innerText = (o.tps.average || 0).toFixed(1);
+
+        document.getElementById('m-tokens-prompt').innerText = (o.tokens.prompt || 0).toLocaleString();
+        document.getElementById('m-tokens-completion').innerText = (o.tokens.completion || 0).toLocaleString();
+        document.getElementById('m-tokens-cached').innerText = (o.tokens.cached || 0).toLocaleString();
+
+        const promptAndCached = (o.tokens.prompt || 0) + (o.tokens.cached || 0);
+        const cacheRatio = promptAndCached > 0 ? Math.round((o.tokens.cached / promptAndCached) * 100) : 0;
+        document.getElementById('m-cache-ratio').innerText = cacheRatio + '%';
+
+        document.getElementById('m-latency-duration').innerText = (o.latency.avgDurationMs || 0) + ' ms';
+        document.getElementById('m-latency-ttft').innerText = (o.latency.avgTtftMs || 0) + ' ms';
+
+        document.getElementById('m-requests-total').innerText = o.totalRequests || 0;
+        document.getElementById('m-requests-success').innerText = o.successRequests || 0;
+        document.getElementById('m-requests-failed').innerText = o.failedRequests || 0;
+
+        // Models table
+        const modelsTbody = document.getElementById('metrics-models-tbody');
+        if (data.models && data.models.length > 0) {
+          modelsTbody.innerHTML = data.models.map(m => `
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="py-2 px-3 font-bold text-white flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                ${m.id}
+              </td>
+              <td class="py-2 px-3 text-right">
+                <span class="text-emerald-400">${m.success}</span> / <span class="text-rose-400">${m.errors}</span>
+              </td>
+              <td class="py-2 px-3 text-right text-sky-400">${m.promptTokens.toLocaleString()}</td>
+              <td class="py-2 px-3 text-right text-emerald-400">${m.completionTokens.toLocaleString()}</td>
+              <td class="py-2 px-3 text-right text-purple-400">${m.cachedTokens.toLocaleString()}</td>
+              <td class="py-2 px-3 text-right font-bold text-white">${m.totalTokens.toLocaleString()}</td>
+              <td class="py-2 px-3 text-right text-amber-400">${m.avgTps}</td>
+              <td class="py-2 px-3 text-right text-slate-400">${m.avgDurationMs}ms</td>
+            </tr>
+          `).join('');
+        } else {
+          modelsTbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-500 text-xs">Chưa có request nào được thực hiện.</td></tr>`;
+        }
+
+        // Accounts table
+        const accTbody = document.getElementById('metrics-accounts-tbody');
+        if (data.accounts && data.accounts.length > 0) {
+          accTbody.innerHTML = data.accounts.map(a => `
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="py-2 px-3 font-medium text-white font-mono text-xs">${a.email}</td>
+              <td class="py-2 px-3 font-mono text-slate-400 text-xs">${a.projectId || 'aicode-consumers'}</td>
+              <td class="py-2 px-3">
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${a.cooldownRemainingSec > 0 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
+                  ${a.cooldownRemainingSec > 0 ? 'Cooldown' : 'Ready'}
+                </span>
+              </td>
+              <td class="py-2 px-3 text-right font-mono text-xs">
+                <span class="text-emerald-400">${a.success || 0}</span> / <span class="text-rose-400">${a.errors || 0}</span>
+              </td>
+              <td class="py-2 px-3 text-right font-mono text-xs text-slate-200">${(a.totalTokens || 0).toLocaleString()}</td>
+              <td class="py-2 px-3 text-right font-mono text-xs ${a.cooldownRemainingSec > 0 ? 'text-amber-400 font-bold' : 'text-slate-500'}">
+                ${a.cooldownRemainingSec > 0 ? a.cooldownRemainingSec + 's' : '-'}
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        // Recent requests log
+        const recentTbody = document.getElementById('metrics-recent-tbody');
+        document.getElementById('m-recent-count').innerText = `Hiển thị ${data.recentRequests.length} lượt gọi gần nhất`;
+        if (data.recentRequests && data.recentRequests.length > 0) {
+          recentTbody.innerHTML = data.recentRequests.map(r => {
+            const timeStr = new Date(r.time).toLocaleTimeString();
+            const isOk = r.status === 'success';
+            return `
+              <tr class="hover:bg-slate-800/40 transition">
+                <td class="py-2 px-3 text-slate-400">${timeStr}</td>
+                <td class="py-2 px-3 text-white font-medium">${r.model}</td>
+                <td class="py-2 px-3 text-slate-400 truncate max-w-[150px]" title="${r.account}">${r.account.split('@')[0]}</td>
+                <td class="py-2 px-3 text-center">
+                  <span class="text-[9px] px-1.5 py-0.5 rounded ${r.stream ? 'bg-sky-500/10 text-sky-400' : 'bg-slate-800 text-slate-400'}">
+                    ${r.stream ? 'STREAM' : 'SYNC'}
+                  </span>
+                </td>
+                <td class="py-2 px-3 text-right">
+                  <span class="text-sky-400">${r.promptTokens}</span> /
+                  <span class="text-emerald-400">${r.completionTokens}</span> /
+                  <span class="text-purple-400">${r.cachedTokens}</span>
+                </td>
+                <td class="py-2 px-3 text-right text-slate-300">${r.ttftMs}ms</td>
+                <td class="py-2 px-3 text-right text-slate-300">${(r.durationMs / 1000).toFixed(2)}s</td>
+                <td class="py-2 px-3 text-right text-amber-400 font-bold">${r.tps > 0 ? r.tps : '-'}</td>
+                <td class="py-2 px-3 text-center">
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${isOk ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}" title="${r.error || 'OK'}">
+                    ${isOk ? '200 OK' : 'ERROR'}
+                  </span>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          recentTbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-500 text-xs">Chưa có lịch sử request.</td></tr>`;
+        }
+
+      } catch (e) {
+        console.error('Failed to load metrics:', e);
+      }
+    }
+
+    function toggleMetricsAutoRefresh() {
+      const enabled = document.getElementById('metrics-auto-refresh').checked;
+      if (enabled) startMetricsAutoRefresh();
+      else stopMetricsAutoRefresh();
+    }
+
+    function startMetricsAutoRefresh() {
+      stopMetricsAutoRefresh();
+      metricsTimer = setInterval(loadMetrics, 2000);
+    }
+
+    function stopMetricsAutoRefresh() {
+      if (metricsTimer) {
+        clearInterval(metricsTimer);
+        metricsTimer = null;
+      }
+    }
+
+    async function resetMetrics() {
+      if (!confirm('Bạn có chắc chắn muốn đặt lại tất cả bộ đếm thống kê & Quota không?')) return;
+      try {
+        await fetch('/api/metrics/reset', { method: 'POST' });
+        loadMetrics();
+      } catch (e) {
+        alert('Lỗi reset metrics: ' + e.message);
+      }
+    }
+
+    // ==================== SKILLS CUSTOMIZER ====================
+    async function loadSkills() {
+      try {
+        const res = await fetch('/api/skills');
+        const data = await res.json();
+        cachedSkills = data.skills || [];
+        document.getElementById('skills-count-badge').innerText = cachedSkills.length;
+        document.getElementById('skills-dir-path').innerText = data.skillsDir || '~/.agents/skills';
+        renderSkillsList(cachedSkills);
+
+        if (cachedSkills.length > 0 && !activeSkillId) {
+          selectSkill(cachedSkills[0].id);
+        }
+      } catch (e) {
+        console.error('Failed to load skills:', e);
+      }
+    }
+
+    function renderSkillsList(skills) {
+      const container = document.getElementById('skills-list-container');
+      if (skills.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-500">Không tìm thấy skill nào.</div>`;
+        return;
+      }
+
+      container.innerHTML = skills.map(s => {
+        const isSel = s.id === activeSkillId;
+        const sizeKb = (s.size / 1024).toFixed(1);
+        return `
+          <div
+            onclick="selectSkill('${s.id}')"
+            class="p-3.5 cursor-pointer transition select-none ${isSel ? 'bg-slate-800/90 border-l-2 border-emerald-400' : 'hover:bg-slate-900/60'}"
+          >
+            <div class="flex items-center justify-between mb-1">
+              <h4 class="font-bold text-xs text-white truncate max-w-[190px]">${s.name}</h4>
+              <span class="text-[10px] text-slate-500 font-mono">${sizeKb} KB</span>
+            </div>
+            <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">${s.description}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterSkills() {
+      const q = document.getElementById('skill-search').value.toLowerCase().trim();
+      const filtered = cachedSkills.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.id.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q)
+      );
+      renderSkillsList(filtered);
+    }
+
+    async function selectSkill(skillId) {
+      activeSkillId = skillId;
+      renderSkillsList(cachedSkills);
+
+      try {
+        const res = await fetch(`/api/skills/${encodeURIComponent(skillId)}`);
+        const data = await res.json();
+        const s = data.skill;
+
+        document.getElementById('skill-edit-id').value = s.id;
+        document.getElementById('skill-edit-id').disabled = true;
+        document.getElementById('skill-edit-name').value = s.name;
+        document.getElementById('skill-edit-desc').value = s.description;
+        document.getElementById('skill-edit-content').value = s.content;
+        document.getElementById('skill-delete-btn').classList.remove('hidden');
+
+        const updatedStr = new Date(s.updatedAt).toLocaleString();
+        document.getElementById('skill-edit-meta').innerText = `File: ${s.path} | Cập nhật: ${updatedStr}`;
+
+        toggleSkillEditorTab('code');
+      } catch (e) {
+        alert('Lỗi tải skill: ' + e.message);
+      }
+    }
+
+    function newSkillForm() {
+      activeSkillId = null;
+      renderSkillsList(cachedSkills);
+
+      document.getElementById('skill-edit-id').value = '';
+      document.getElementById('skill-edit-id').disabled = false;
+      document.getElementById('skill-edit-name').value = '';
+      document.getElementById('skill-edit-desc').value = '';
+      document.getElementById('skill-delete-btn').classList.add('hidden');
+      document.getElementById('skill-edit-meta').innerText = 'Đang soạn thảo Skill mới...';
+
+      insertSkillTemplate();
+      document.getElementById('skill-edit-id').focus();
+    }
+
+    function insertSkillTemplate() {
+      const idVal = document.getElementById('skill-edit-id').value || 'my-new-skill';
+      const nameVal = document.getElementById('skill-edit-name').value || idVal;
+      const descVal = document.getElementById('skill-edit-desc').value || 'Mô tả mục đích và cách sử dụng của skill...';
+
+      const template = `---
+name: ${nameVal}
+description: ${descVal}
+---
+
+# ${nameVal}
+
+## Khi nào nên sử dụng
+- Sử dụng khi người dùng yêu cầu...
+- Sử dụng khi cần tự động hóa...
+
+## Hướng dẫn thực hiện
+1. **Bước 1:** Xác định mục tiêu và phân tích ngữ cảnh.
+2. **Bước 2:** Thực thi với độ chính xác cao, tuân thủ tiêu chuẩn Clean Code.
+3. **Bước 3:** Tự kiểm tra và xác thực kết quả trước khi hoàn thành.
+`;
+      document.getElementById('skill-edit-content').value = template;
+      toggleSkillEditorTab('code');
+    }
+
+    async function saveCurrentSkill() {
+      const id = document.getElementById('skill-edit-id').value.trim();
+      const name = document.getElementById('skill-edit-name').value.trim();
+      const description = document.getElementById('skill-edit-desc').value.trim();
+      const content = document.getElementById('skill-edit-content').value;
+
+      if (!id) {
+        alert('Vui lòng nhập Mã định danh (ID) cho Skill!');
+        document.getElementById('skill-edit-id').focus();
+        return;
+      }
+
+      try {
+        const isUpdate = Boolean(activeSkillId);
+        const url = isUpdate ? `/api/skills/${encodeURIComponent(activeSkillId)}` : '/api/skills';
+        const method = isUpdate ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, name: name || id, description, content })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        alert(`Đã lưu skill "${data.skill.name}" thành công!`);
+        activeSkillId = data.skill.id;
+        await loadSkills();
+        selectSkill(data.skill.id);
+      } catch (e) {
+        alert('Lỗi lưu skill: ' + e.message);
+      }
+    }
+
+    async function deleteCurrentSkill() {
+      if (!activeSkillId) return;
+      if (!confirm(`Bạn có chắc chắn muốn xóa skill "${activeSkillId}" không? Thao tác này không thể hoàn tác.`)) return;
+
+      try {
+        const res = await fetch(`/api/skills/${encodeURIComponent(activeSkillId)}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+        alert(`Đã xóa skill "${activeSkillId}" thành công.`);
+        activeSkillId = null;
+        await loadSkills();
+        if (cachedSkills.length > 0) {
+          selectSkill(cachedSkills[0].id);
+        } else {
+          newSkillForm();
+        }
+      } catch (e) {
+        alert('Lỗi xóa skill: ' + e.message);
+      }
+    }
+
+    function toggleSkillEditorTab(tab) {
+      const isCode = tab === 'code';
+      document.getElementById('skill-tab-code-btn').className = `px-3 py-1 font-semibold transition ${isCode ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-white'}`;
+      document.getElementById('skill-tab-preview-btn').className = `px-3 py-1 font-semibold transition ${!isCode ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-400 hover:text-white'}`;
+
+      const codeEl = document.getElementById('skill-edit-content');
+      const prevEl = document.getElementById('skill-edit-preview');
+
+      if (isCode) {
+        codeEl.classList.remove('hidden');
+        prevEl.classList.add('hidden');
+      } else {
+        codeEl.classList.add('hidden');
+        prevEl.classList.remove('hidden');
+        prevEl.innerHTML = marked.parse(codeEl.value || '');
+        prevEl.querySelectorAll('pre code').forEach((el) => {
+          hljs.highlightElement(el);
+        });
+      }
+    }
+
+    // ==================== ACCOUNTS MANAGEMENT ====================
     async function loadAccounts() {
       try {
         const res = await fetch('/api/accounts');
@@ -369,13 +1006,12 @@
       }
     }
 
-    // Quick Prompt
+    // ==================== CHAT PLAYGROUND ====================
     function quickPrompt(text) {
       document.getElementById('chat-input').value = text;
       handleChatSubmit(new Event('submit'));
     }
 
-    // Clear Chat
     function clearChat() {
       chatHistory = [];
       document.getElementById('chat-messages').innerHTML = `
@@ -383,7 +1019,6 @@
       `;
     }
 
-    // Handle Chat Submit
     async function handleChatSubmit(e) {
       if (e) e.preventDefault();
       if (isGenerating) return;
@@ -397,7 +1032,6 @@
       const stream = document.getElementById('chat-stream').checked;
       const temperature = parseFloat(document.getElementById('chat-temp').value);
 
-      // Append user message
       chatHistory.push({ role: 'user', content: prompt });
       appendMessage('user', prompt);
 
@@ -406,7 +1040,6 @@
       sendBtn.disabled = true;
       sendBtn.classList.add('opacity-50');
 
-      // AI bubble container
       const aiMsgEl = appendMessage('assistant', '');
 
       try {
@@ -543,7 +1176,6 @@
       container.scrollTop = container.scrollHeight;
     }
 
-    // Copy Code Helper
     function copyCode(id) {
       const code = document.getElementById(id).innerText;
       navigator.clipboard.writeText(code).then(() => {
@@ -556,6 +1188,9 @@
       document.getElementById('chat-temp-val').innerText = e.target.value;
     });
     loadAccounts();
+    fetch('/api/skills').then(r => r.json()).then(d => {
+      document.getElementById('skills-count-badge').innerText = d.skills?.length || 0;
+    }).catch(() => {});
   </script>
 </body>
 </html>

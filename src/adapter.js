@@ -191,8 +191,14 @@ export class Adapter {
     let reasoningContent = '';
     let toolCalls = [];
     let finishReason = 'stop';
+    let lastUsage = null;
 
     for (const item of aggregated) {
+      if (item?.response?.usageMetadata) {
+        lastUsage = item.response.usageMetadata;
+      } else if (item?.usageMetadata) {
+        lastUsage = item.usageMetadata;
+      }
       const cand = item?.response?.candidates?.[0];
       if (cand) {
         if (cand.finishReason) finishReason = cand.finishReason.toLowerCase();
@@ -200,13 +206,15 @@ export class Adapter {
           if (part.thought) reasoningContent += part.thought;
           if (part.text) content += part.text;
           if (part.functionCall) {
+            const sig = part.thoughtSignature || part.thought_signature;
             toolCalls.push({
               id: `call_${crypto.randomBytes(8).toString('hex')}`,
               type: 'function',
               function: {
                 name: part.functionCall.name,
                 arguments: JSON.stringify(part.functionCall.args || {})
-              }
+              },
+              ...(sig ? { thought_signature: sig } : {})
             });
           }
         }
@@ -226,6 +234,11 @@ export class Adapter {
       finishReason = 'tool_calls';
     }
 
+    const promptTokens = lastUsage?.promptTokenCount || 0;
+    const completionTokens = lastUsage?.candidatesTokenCount || 0;
+    const cachedTokens = lastUsage?.cachedContentTokenCount || 0;
+    const totalTokens = lastUsage?.totalTokenCount || (promptTokens + completionTokens);
+
     return {
       id: completionId,
       object: 'chat.completion',
@@ -239,9 +252,12 @@ export class Adapter {
         }
       ],
       usage: {
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: totalTokens,
+        prompt_tokens_details: {
+          cached_tokens: cachedTokens
+        }
       }
     };
   }
