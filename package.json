@@ -1,0 +1,16 @@
+{
+  "name": "antigravity-local-openai-api",
+  "version": "1.0.0",
+  "description": "Local OpenAI API Proxy for Google Antigravity CloudCode Gemini Models",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3"
+  }
+}

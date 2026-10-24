@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antigravity Local OpenAI API Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Marked for Markdown & Highlight.js for Code -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    pre, code, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .prose pre {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+      position: relative;
+    }
+    .prose code {
+      color: #38bdf8;
+      font-size: 0.9em;
+    }
+    .prose p {
+      margin-bottom: 0.75rem;
+    }
+    .prose p:last-child {
+      margin-bottom: 0;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+        <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-base tracking-tight text-white flex items-center gap-2">
+          Antigravity Local OpenAI API
+          <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span>
+        </h1>
+        <p class="text-xs text-slate-400">Endpoint: <code class="text-emerald-400 bg-slate-800/60 px-1.5 py-0.5 rounded font-mono">http://127.0.0.1:8045/v1</code></p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex items-center bg-slate-900 border border-slate-800 p-1 rounded-xl space-x-1">
+      <button onclick="switchTab('chat')" id="tab-btn-chat" class="tab-btn px-4 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 text-slate-950 shadow-sm transition">
+        💬 Chat Playground
+      </button>
+      <button onclick="switchTab('accounts')" id="tab-btn-accounts" class="tab-btn px-4 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+        👥 Accounts (<span id="acc-count-badge">0</span>)
+      </button>
+      <button onclick="switchTab('config')" id="tab-btn-config" class="tab-btn px-4 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+        🛠️ Kilo / Client Config
+      </button>
+    </nav>
+
+    <!-- Quick Actions -->
+    <div class="flex items-center space-x-2">
+      <a href="/oauth/login" target="_blank" class="flex items-center gap-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 px-3 py-1.5 rounded-lg transition shadow-sm">
+        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Link Google Account
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 flex overflow-hidden">
+
+    <!-- TAB 1: CHAT PLAYGROUND -->
+    <section id="tab-chat" class="flex-1 flex flex-col h-[calc(100vh-65px)]">
+      <!-- Toolbar -->
+      <div class="px-6 py-2.5 border-b border-slate-800/80 bg-slate-900/40 flex items-center justify-between text-xs">
+        <div class="flex items-center space-x-3">
+          <label class="text-slate-400 font-medium">Model:</label>
+          <select id="chat-model" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-emerald-500">
+            <option value="gemini-3.8-flash-high">✨ Gemini 3.8 Flash High (Reasoning)</option>
+            <option value="claude-opus-5-5-high">🧠 Claude Opus 5.5 High</option>
+            <option value="claude-sonnet-5-5-high">⚡ Claude Sonnet 5.5 High</option>
+          </select>
+
+          <span class="text-slate-600">|</span>
+
+          <label class="text-slate-400 font-medium">Stream:</label>
+          <input type="checkbox" id="chat-stream" checked class="rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 bg-slate-800">
+
+          <span class="text-slate-600">|</span>
+
+          <label class="text-slate-400 font-medium">Temperature:</label>
+          <input type="range" id="chat-temp" min="0" max="1" step="0.1" value="0.7" class="w-20 accent-emerald-500">
+          <span id="chat-temp-val" class="text-slate-300 font-mono">0.7</span>
+        </div>
+
+        <button onclick="clearChat()" class="text-slate-400 hover:text-rose-400 text-xs flex items-center gap-1 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Clear Chat
+        </button>
+      </div>
+
+      <!-- Messages Window -->
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4">
+        <!-- Welcome card -->
+        <div class="max-w-2xl mx-auto p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-900/40 border border-slate-800 text-center my-6 shadow-xl">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          </div>
+          <h3 class="text-base font-bold text-white mb-1">Local Antigravity Playground</h3>
+          <p class="text-xs text-slate-400 mb-4 max-w-md mx-auto">
+            Giao diện kiểm thử trực tiếp các model Gemini 3.8 Flash High và Claude 5.5 High từ tài khoản Google của bạn với chuẩn OpenAI Streaming API.
+          </p>
+          <div class="flex flex-wrap justify-center gap-2">
+            <button onclick="quickPrompt('Viết một bài thơ 4 câu về lập trình viên')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700/80 transition">
+              📝 Viết bài thơ 4 câu
+            </button>
+            <button onclick="quickPrompt('Giải bài toán: Có 12 quả táo, chia cho 3 người sao cho mỗi người ít nhất 2 quả. Có bao nhiêu cách?')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700/80 transition">
+              🧠 Bài toán tổ hợp
+            </button>
+            <button onclick="quickPrompt('Tạo một hàm TypeScript debounce tối ưu bộ nhớ và gõ type an toàn')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700/80 transition">
+              ⚡ Code TypeScript
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Form -->
+      <div class="p-4 border-t border-slate-800/80 bg-slate-900/60">
+        <form id="chat-form" onsubmit="handleChatSubmit(event)" class="max-w-4xl mx-auto relative">
+          <textarea
+            id="chat-input"
+            rows="2"
+            placeholder="Nhập tin nhắn hoặc câu hỏi cho model... (Shift+Enter để xuống dòng, Enter để gửi)"
+            class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl py-3 pl-4 pr-24 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none"
+            onkeydown="if(event.key === 'Enter' && !event.shiftKey){ event.preventDefault(); handleChatSubmit(event); }"
+          ></textarea>
+          <button
+            type="submit"
+            id="chat-send-btn"
+            class="absolute right-2.5 bottom-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm shadow-emerald-500/20"
+          >
+            <span>Gửi</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 2: ACCOUNTS MANAGEMENT -->
+    <section id="tab-accounts" class="flex-1 hidden overflow-y-auto p-8 max-w-5xl mx-auto w-full">
+      <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+        <div>
+          <h2 class="text-xl font-bold text-white tracking-tight">Tài Khoản Google Antigravity</h2>
+          <p class="text-xs text-slate-400 mt-1">Hệ thống tự động xoay vòng (round-robin) và tự động refresh token trước khi hết hạn.</p>
+        </div>
+        <a href="/oauth/login" target="_blank" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition shadow-lg shadow-emerald-500/20">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Liên Kết Thêm Tài Khoản
+        </a>
+      </div>
+
+      <div id="accounts-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 3: CONFIGURATION GUIDE -->
+    <section id="tab-config" class="flex-1 hidden overflow-y-auto p-8 max-w-4xl mx-auto w-full">
+      <div class="mb-6 pb-4 border-b border-slate-800">
+        <h2 class="text-xl font-bold text-white tracking-tight">Hướng Dẫn Cấu Hình Client</h2>
+        <p class="text-xs text-slate-400 mt-1">Copy cấu hình để sử dụng trực tiếp trên Kilo Code, Claude Code, Cursor và các IDE khác.</p>
+      </div>
+
+      <!-- Kilo Code Config -->
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm text-emerald-400 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            Kilo Code (~/.config/kilo/kilo.jsonc)
+          </h3>
+          <button onclick="copyCode('kilo-config')" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1 rounded-md border border-slate-700 transition">
+            Copy JSON
+          </button>
+        </div>
+        <pre><code id="kilo-config" class="language-json">{
+  "provider": {
+    "aygfree": {
+      "name": "AYGFree",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:8045/v1",
+        "apiKey": "sk-local-antigravity"
+      },
+      "models": {
+        "gemini-3.8-flash-high": {
+          "name": "Gemini 3.8 Flash High (AYGFree)",
+          "reasoning": true,
+          "attachment": true,
+          "modalities": { "input": ["text", "image", "pdf"] }
+        },
+        "claude-opus-5-5-high": {
+          "name": "Claude Opus 5.5 High (AYGFree)",
+          "reasoning": true,
+          "attachment": true,
+          "modalities": { "input": ["text", "image", "pdf"] }
+        },
+        "claude-sonnet-5-5-high": {
+          "name": "Claude Sonnet 5.5 High (AYGFree)",
+          "reasoning": true,
+          "attachment": true,
+          "modalities": { "input": ["text", "image", "pdf"] }
+        }
+      }
+    }
+  }
+}</code></pre>
+      </div>
+
+      <!-- cURL Test -->
+      <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-sm text-slate-200">cURL Test Stream</h3>
+          <button onclick="copyCode('curl-config')" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1 rounded-md border border-slate-700 transition">
+            Copy cURL
+          </button>
+        </div>
+        <pre><code id="curl-config" class="language-bash">curl http://127.0.0.1:8045/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-3.8-flash-high",
+    "stream": true,
+    "messages": [{"role": "user", "content": "Xin chào!"}]
+  }'</code></pre>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Script logic -->
+  <script>
+    let chatHistory = [];
+    let isGenerating = false;
+
+    // Tab Switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('bg-emerald-500', 'text-slate-950');
+        b.classList.add('text-slate-400');
+      });
+      document.getElementById('tab-btn-' + tabId).classList.add('bg-emerald-500', 'text-slate-950');
+      document.getElementById('tab-btn-' + tabId).classList.remove('text-slate-400');
+
+      document.getElementById('tab-chat').classList.toggle('hidden', tabId !== 'chat');
+      document.getElementById('tab-accounts').classList.toggle('hidden', tabId !== 'accounts');
+      document.getElementById('tab-config').classList.toggle('hidden', tabId !== 'config');
+
+      if (tabId === 'accounts') loadAccounts();
+    }
+
+    // Load Accounts
+    async function loadAccounts() {
+      try {
+        const res = await fetch('/api/accounts');
+        const data = await res.json();
+        const list = document.getElementById('accounts-list');
+        document.getElementById('acc-count-badge').innerText = data.accounts.length;
+
+        if (data.accounts.length === 0) {
+          list.innerHTML = `<div class="col-span-2 text-center py-12 text-slate-500 text-sm">Chưa có tài khoản nào. Bấm 'Liên Kết Thêm Tài Khoản' ở trên.</div>`;
+          return;
+        }
+
+        list.innerHTML = data.accounts.map(a => `
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+              <div>
+                <h4 class="font-bold text-sm text-white">${a.name || a.email}</h4>
+                <p class="text-xs text-slate-400 font-mono mt-0.5">${a.email}</p>
+                <div class="text-[11px] text-slate-500 mt-1">Project: <span class="text-slate-400 font-mono">${a.projectId}</span></div>
+              </div>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${a.isCooldown ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">
+                ${a.isCooldown ? `Cooldown (${a.cooldownSeconds}s)` : 'Ready'}
+              </span>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Token: <span class="text-emerald-400">Tự động refresh</span></span>
+              <span class="text-slate-500">OAuth Antigravity</span>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error('Failed to load accounts:', e);
+      }
+    }
+
+    // Quick Prompt
+    function quickPrompt(text) {
+      document.getElementById('chat-input').value = text;
+      handleChatSubmit(new Event('submit'));
+    }
+
+    // Clear Chat
+    function clearChat() {
+      chatHistory = [];
+      document.getElementById('chat-messages').innerHTML = `
+        <div class="text-center py-12 text-xs text-slate-500 font-mono">Đã dọn dẹp lịch sử trò chuyện. Sẵn sàng nhận câu hỏi mới!</div>
+      `;
+    }
+
+    // Handle Chat Submit
+    async function handleChatSubmit(e) {
+      if (e) e.preventDefault();
+      if (isGenerating) return;
+
+      const inputEl = document.getElementById('chat-input');
+      const prompt = inputEl.value.trim();
+      if (!prompt) return;
+
+      inputEl.value = '';
+      const model = document.getElementById('chat-model').value;
+      const stream = document.getElementById('chat-stream').checked;
+      const temperature = parseFloat(document.getElementById('chat-temp').value);
+
+      // Append user message
+      chatHistory.push({ role: 'user', content: prompt });
+      appendMessage('user', prompt);
+
+      isGenerating = true;
+      const sendBtn = document.getElementById('chat-send-btn');
+      sendBtn.disabled = true;
+      sendBtn.classList.add('opacity-50');
+
+      // AI bubble container
+      const aiMsgEl = appendMessage('assistant', '');
+
+      try {
+        const res = await fetch('/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model,
+            stream,
+            temperature,
+            messages: chatHistory
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP Error ${res.status}`);
+        }
+
+        let fullAiText = '';
+        let fullReasoning = '';
+
+        if (stream) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let lineBuffer = '';
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            lineBuffer += decoder.decode(value, { stream: true });
+            const lines = lineBuffer.split('\n');
+            lineBuffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('data:') && !trimmed.includes('[DONE]')) {
+                try {
+                  const json = JSON.parse(trimmed.slice(5).trim());
+                  const delta = json.choices[0]?.delta;
+                  if (delta?.reasoning_content) {
+                    fullReasoning += delta.reasoning_content;
+                    updateAiMessage(aiMsgEl, fullAiText, fullReasoning);
+                  }
+                  if (delta?.content) {
+                    fullAiText += delta.content;
+                    updateAiMessage(aiMsgEl, fullAiText, fullReasoning);
+                  }
+                } catch (e) {}
+              }
+            }
+          }
+        } else {
+          const data = await res.json();
+          const msg = data.choices[0]?.message;
+          fullAiText = msg?.content || '';
+          fullReasoning = msg?.reasoning_content || '';
+          updateAiMessage(aiMsgEl, fullAiText, fullReasoning);
+        }
+
+        chatHistory.push({ role: 'assistant', content: fullAiText });
+      } catch (err) {
+        aiMsgEl.querySelector('.content-body').innerHTML = `
+          <div class="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+            Lỗi phản hồi: ${err.message}
+          </div>
+        `;
+      } finally {
+        isGenerating = false;
+        sendBtn.disabled = false;
+        sendBtn.classList.remove('opacity-50');
+      }
+    }
+
+    function appendMessage(role, text) {
+      const container = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = `flex gap-3 max-w-4xl mx-auto ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+
+      if (role === 'user') {
+        div.innerHTML = `
+          <div class="max-w-[80%] bg-emerald-600 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm leading-relaxed whitespace-pre-wrap">
+            ${text}
+          </div>
+        `;
+      } else {
+        div.innerHTML = `
+          <div class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xs shrink-0 text-emerald-400 font-bold">
+            AI
+          </div>
+          <div class="flex-1 max-w-[85%] bg-slate-900 border border-slate-800 px-5 py-3.5 rounded-2xl rounded-tl-sm text-sm text-slate-100 shadow-sm leading-relaxed">
+            <div class="reasoning-box hidden mb-3"></div>
+            <div class="content-body prose dark:prose-invert max-w-none text-sm">
+              <span class="animate-pulse text-slate-500">Đang suy nghĩ...</span>
+            </div>
+          </div>
+        `;
+      }
+
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+      return div;
+    }
+
+    function updateAiMessage(msgEl, content, reasoning) {
+      if (!msgEl) return;
+      const reasoningBox = msgEl.querySelector('.reasoning-box');
+      const contentBody = msgEl.querySelector('.content-body');
+
+      if (reasoning) {
+        reasoningBox.classList.remove('hidden');
+        reasoningBox.innerHTML = `
+          <details class="group bg-slate-950/60 border border-slate-800 rounded-xl overflow-hidden" open>
+            <summary class="cursor-pointer px-3 py-1.5 text-xs text-amber-400 font-medium bg-amber-500/10 border-b border-slate-800 flex items-center justify-between select-none">
+              <span>🧠 Quá trình suy luận (Thinking)</span>
+              <span class="text-[10px] text-slate-500">${reasoning.length} ký tự</span>
+            </summary>
+            <div class="p-3 text-xs text-slate-400 font-mono whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
+              ${reasoning}
+            </div>
+          </details>
+        `;
+      }
+
+      if (content) {
+        contentBody.innerHTML = marked.parse(content);
+        contentBody.querySelectorAll('pre code').forEach((el) => {
+          hljs.highlightElement(el);
+        });
+      }
+
+      const container = document.getElementById('chat-messages');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Copy Code Helper
+    function copyCode(id) {
+      const code = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        alert('Đã copy cấu hình vào Clipboard!');
+      });
+    }
+
+    // Init
+    document.getElementById('chat-temp').addEventListener('input', (e) => {
+      document.getElementById('chat-temp-val').innerText = e.target.value;
+    });
+    loadAccounts();
+  </script>
+</body>
+</html>
